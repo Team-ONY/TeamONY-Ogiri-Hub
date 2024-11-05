@@ -76,11 +76,9 @@ function SignUp() {
             >
               <FormControl>
                 <InputGroup>
-                  <InputLeftElement
-                    pointerEvents="none"
-                    children={<AtSignIcon color="gray.400" />}
-                    mt={1}
-                  />
+                  <InputLeftElement pointerEvents="none" mt={1}>
+                    <AtSignIcon color="gray.400" />
+                  </InputLeftElement>
                   <Input
                     w="400px"
                     placeholder="Username"
@@ -112,7 +110,7 @@ function SignUp() {
                 <InputGroup>
                   <InputLeftElement
                     pointerEvents="none"
-                    children={<EmailIcon color="gray.400" />}
+                    children={<EmailIcon color="gray.400" />} // 修正前
                     mt={1}
                   />
                   <Input
@@ -144,11 +142,9 @@ function SignUp() {
             >
               <FormControl>
                 <InputGroup>
-                  <InputLeftElement
-                    pointerEvents="none"
-                    children={<LockIcon color="gray.400" />}
-                    mt={1}
-                  />
+                  <InputLeftElement pointerEvents="none" mt={1}>
+                    <LockIcon color="gray.400" />
+                  </InputLeftElement>
                   <Input
                     w="400px"
                     placeholder="Password"
