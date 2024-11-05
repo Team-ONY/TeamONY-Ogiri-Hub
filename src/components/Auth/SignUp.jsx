@@ -108,11 +108,9 @@ function SignUp() {
             >
               <FormControl>
                 <InputGroup>
-                  <InputLeftElement
-                    pointerEvents="none"
-                    children={<EmailIcon color="gray.400" />} // 修正前
-                    mt={1}
-                  />
+                  <InputLeftElement pointerEvents="none" mt={1}>
+                    <EmailIcon color="gray.400" />
+                  </InputLeftElement>
                   <Input
                     w="400px"
                     placeholder="Email"
