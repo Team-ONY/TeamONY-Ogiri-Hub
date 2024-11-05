@@ -75,11 +75,9 @@ function SignIn() {
             >
               <FormControl>
                 <InputGroup>
-                  <InputLeftElement
-                    pointerEvents="none"
-                    children={<EmailIcon color="gray.400" />}
-                    mt={1}
-                  />
+                  <InputLeftElement pointerEvents="none" mt={1}>
+                    <EmailIcon color="gray.400" />
+                  </InputLeftElement>
                   <Input
                     w="400px"
                     placeholder="Email"
@@ -109,11 +107,9 @@ function SignIn() {
             >
               <FormControl>
                 <InputGroup>
-                  <InputLeftElement
-                    pointerEvents="none"
-                    children={<LockIcon color="gray.400" />}
-                    mt={1}
-                  />
+                  <InputLeftElement pointerEvents="none" mt={1}>
+                    <LockIcon color="gray.400" />
+                  </InputLeftElement>
                   <Input
                     w="400px"
                     placeholder="Password"
@@ -191,7 +187,7 @@ function SignIn() {
             >
               <VStack spacing={4} w="100%">
                 <Text color="white" fontSize="md" fontWeight="bold">
-                  Don't have an account?
+                  Don&apos;t have an account?
                 </Text>
                 <Button
                   w="300px"
