@@ -8,4 +8,15 @@ export const theme = extendTheme({
       darkPink: '#FF8C00',
     },
   },
+  styles: {
+    global: {
+      body: {
+        bg: 'transparent',
+      },
+    },
+  },
+  config: {
+    initializeAnalytics: 'dark',
+    useSystemColorMode: false,
+  },
 });
