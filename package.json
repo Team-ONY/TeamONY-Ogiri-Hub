@@ -8,7 +8,8 @@
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "format": "prettier --write \"src/**/*.{js,jsx,css}\""
+    "format": "prettier --write \"src/**/*.{js,jsx,css}\"",
+    "test": "jest"
   },
   "dependencies": {
     "@chakra-ui/icons": "^2.2.4",
@@ -40,5 +41,11 @@
     "jest": "^29.7.0",
     "prettier": "^3.3.3",
     "vite": "^5.4.10"
+  },
+  "jest": {
+    "testEnvironment": "jsdom",
+    "setupFilesAfterEnv": [
+      "@testing-library/jest-dom/extend-expect"
+    ]
   }
 }
