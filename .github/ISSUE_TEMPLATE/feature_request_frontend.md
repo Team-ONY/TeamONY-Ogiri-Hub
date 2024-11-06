@@ -1,8 +1,8 @@
 ---
-name: Feature request(Frontend side)
-about: 新機能のリクエストや機能改善用
-title: 'feat(FrontEnd): '
-labels: enhancement, frontend
+name: For requesting new front-end features and improving functionality.
+about: フロントエンドの新機能のリクエストや機能改善用
+title: 'feat[front-end]: '
+labels: enhancement, frontend, request
 assignees: ''
 ---
 

@@ -1,8 +1,8 @@
 ---
-name: Feature request(Backend side)
-about: 新機能のリクエストや機能改善用
-title: 'feat(BackEnd): '
-labels: enhancement, backend
+name: For backend new feature requests and feature improvements.
+about: バックエンドの新機能のリクエストや機能改善用
+title: 'feat[back-end]: '
+labels: enhancement, backend, request
 assignees: ''
 ---
 
