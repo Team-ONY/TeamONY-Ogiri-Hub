@@ -34,6 +34,7 @@ function SignIn() {
   const handleSignIn = async () => {
     try {
       await signInWithEmailAndPassword(auth, email, password);
+      console.log(`サインイン成功: ${email}`);
     } catch (err) {
       setError(translateFirebaseError(err.code));
     }

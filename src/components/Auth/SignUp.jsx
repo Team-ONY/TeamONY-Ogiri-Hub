@@ -19,6 +19,7 @@ import { EmailIcon, LockIcon, AtSignIcon } from '@chakra-ui/icons';
 import { translateFirebaseError } from '../../utils/translateError';
 import { Link as RouterLink } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 
 const gradientAnimation = keyframes`
   0% { background-position: 0% 50% }
@@ -31,10 +32,13 @@ function SignUp() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const navigate = useNavigate();
 
   const handleSignUp = async () => {
     try {
       await createUserWithEmailAndPassword(auth, email, password);
+      console.log(`アカウント作成成功: ${email}`);
+      navigate('/signin');
     } catch (err) {
       setError(translateFirebaseError(err.code));
     }
