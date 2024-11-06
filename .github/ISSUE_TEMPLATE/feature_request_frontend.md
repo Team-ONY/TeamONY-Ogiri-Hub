@@ -1,6 +1,6 @@
 ---
 name: For requesting new front-end features and improving functionality.
-about: フロントエンドの新機能のリクエストや機能改善用
+about: フロントエンドの新機能のリクエストや機能改善リクエスト用
 title: 'feat[front-end]: '
 labels: enhancement, frontend, request
 assignees: ''

@@ -1,6 +1,6 @@
 ---
 name: For backend new feature requests and feature improvements.
-about: バックエンドの新機能のリクエストや機能改善用
+about: バックエンドの新機能のリクエストや機能改善リクエスト用
 title: 'feat[back-end]: '
 labels: enhancement, backend, request
 assignees: ''
