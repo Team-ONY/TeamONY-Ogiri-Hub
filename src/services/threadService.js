@@ -6,6 +6,8 @@ import {
   updateDoc,
   deleteDoc,
   doc,
+  getDoc,
+  arrayUnion,
 } from 'firebase/firestore';
 
 const threadsCollection = collection(db, 'threads');
@@ -16,6 +18,7 @@ export const createThread = async (title, content) => {
       title,
       content,
       createdAt: new Date(),
+      comments: [],
     });
     return docRef.id;
   } catch (error) {
@@ -36,4 +39,21 @@ export const updateThread = async (id, updatedData) => {
 export const deleteThread = async (id) => {
   const threadDoc = doc(db, 'threads', id);
   await deleteDoc(threadDoc);
+};
+
+export const getThreadById = async (id) => {
+  const threadDoc = doc(db, 'threads', id);
+  const docSnap = await getDoc(threadDoc);
+  if (docSnap.exists()) {
+    return { id: docSnap.id, ...docSnap.data() };
+  } else {
+    console.error('No such document!');
+  }
+};
+
+export const addCommentToThread = async (id, comment) => {
+  const threadDoc = doc(db, 'threads', id);
+  await updateDoc(threadDoc, {
+    comments: arrayUnion(comment),
+  });
 };
