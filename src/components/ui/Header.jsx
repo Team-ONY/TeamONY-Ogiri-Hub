@@ -62,6 +62,7 @@ function Header() {
       height="80px"
       zIndex="1000"
       borderBottom="1px solid rgba(255, 25, 136, 0.1)"
+      borderRadius="lg"
     >
       <IconButton
         icon={<HamburgerIcon boxSize={6} />}
@@ -99,7 +100,7 @@ function Header() {
               bgClip="text"
               letterSpacing="wider"
             >
-              Menu
+              ✨ Ogiri Hub ✨
             </Text>
           </DrawerHeader>
           <DrawerBody p={4} display="flex" flexDirection="column">
