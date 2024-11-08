@@ -35,8 +35,13 @@ function SignIn() {
 
   const handleSignIn = async () => {
     try {
-      await signInWithEmailAndPassword(auth, email, password);
-      console.log(`サインイン成功: ${email}`);
+      const userCredential = await signInWithEmailAndPassword(
+        auth,
+        email,
+        password
+      );
+      const user = userCredential.user;
+      console.log(`サインイン成功: ${user.uid}`);
       navigate('/home');
     } catch (err) {
       setError(translateFirebaseError(err.code));
