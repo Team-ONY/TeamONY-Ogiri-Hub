@@ -20,6 +20,8 @@ import { translateFirebaseError } from '../../utils/translateError';
 import { Link as RouterLink } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
+import { doc, setDoc } from 'firebase/firestore';
+import { db } from '../../config/firebase';
 
 const gradientAnimation = keyframes`
   0% { background-position: 0% 50% }
@@ -36,10 +38,38 @@ function SignUp() {
 
   const handleSignUp = async () => {
     try {
-      await createUserWithEmailAndPassword(auth, email, password);
-      console.log(`アカウント作成成功: ${email}`);
-      navigate('/signin');
+      // バリデーション
+      if (!username || !email || !password) {
+        setError('All fields are required');
+        return;
+      }
+
+      // ユーザー作成
+      const userCredential = await createUserWithEmailAndPassword(
+        auth,
+        email,
+        password
+      );
+      const user = userCredential.user;
+
+      // Firestoreにユーザー情報を保存
+      try {
+        await setDoc(doc(db, 'users', user.uid), {
+          userId: user.uid,
+          username: username,
+          email: email,
+          createdAt: new Date(),
+        });
+
+        console.log('User document successfully created');
+        navigate('/signin');
+      } catch (firestoreError) {
+        console.error('Firestore error: ', firestoreError);
+        setError('Failed to save user data');
+        // Firestoreへの保存に失敗した場合、作成したユーザーを削除することも検討
+      }
     } catch (err) {
+      console.error('Firebase error: ', err);
       setError(translateFirebaseError(err.code));
     }
   };
