@@ -62,6 +62,11 @@ function ThreadDetail() {
             };
           })
         );
+
+        // スレッド作成者の情報も取得
+        const creatorData = await getUserById(threadData.createdBy);
+        setThreadCreator(creatorData);
+
         setThread({ ...threadData, comments: commentsWithUsernames });
       }
     };
@@ -85,31 +90,40 @@ function ThreadDetail() {
       setError('コメントを入力してください');
       return;
     }
-    await addCommentToThread(
-      id,
-      comment,
-      user.uid,
-      user.displayName,
-      user.photoURL
-    );
-    setComment('');
 
-    // コメントを追加した後にスレッドのデータを再取得
-    const threadData = await getThreadById(id);
-    if (threadData) {
-      // コメントの作成者のユーザー名を取得
-      const commentsWithUsernames = await Promise.all(
-        threadData.comments.map(async (comment) => {
-          const userData = await getUserById(comment.createdBy);
-          return {
-            ...comment,
-            createdByUsername: userData ? userData.username : 'Anonymous',
-            userPhotoURL: userData ? userData.photoURL : null,
-            isAdmin: threadData.createdBy === comment.createdBy, // 管理者判定を追加
-          };
-        })
+    try {
+      await addCommentToThread(
+        id,
+        comment,
+        user.uid,
+        user.displayName,
+        user.photoURL
       );
-      setThread({ ...threadData, comments: commentsWithUsernames });
+      setComment('');
+
+      // コメント追加後にスレッドデータを再取得
+      const threadData = await getThreadById(id);
+      if (threadData) {
+        const commentsWithUserInfo = await Promise.all(
+          threadData.comments.map(async (comment) => {
+            const userData = await getUserById(comment.createdBy);
+            return {
+              ...comment,
+              createdByUsername: userData?.username || 'Anonymous',
+              userPhotoURL: userData?.photoURL || null,
+              isAdmin: threadData.createdBy === comment.createdBy,
+            };
+          })
+        );
+
+        setThread({
+          ...threadData,
+          comments: commentsWithUserInfo,
+        });
+      }
+    } catch (error) {
+      console.error('Error adding comment:', error);
+      setError('コメントの追加に失敗しました');
     }
   };
 
