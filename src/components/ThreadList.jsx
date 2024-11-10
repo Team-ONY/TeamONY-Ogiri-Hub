@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getThreads } from '../services/threadService';
+import { getThreads, joinThread } from '../services/threadService'; // joinThreadを追加
 import {
   Box,
   Text,
@@ -28,6 +28,7 @@ import {
   FiCheckCircle,
   FiAlertCircle,
 } from 'react-icons/fi';
+import { auth } from '../config/firebase';
 
 const MotionBox = motion(Box);
 const MotionTag = motion(Tag);
@@ -37,6 +38,7 @@ function ThreadList() {
   const [selectedThread, setSelectedThread] = useState(null);
   const { isOpen, onOpen, onClose } = useDisclosure();
   const navigate = useNavigate();
+  const currentUser = auth.currentUser;
 
   useEffect(() => {
     const fetchThreads = async () => {
@@ -46,19 +48,36 @@ function ThreadList() {
     fetchThreads();
   }, []);
 
-  const handleJoinClick = (thread, e) => {
-    e.stopPropagation(); // カード全体のクリックイベントを防ぐ
-    setSelectedThread(thread);
-    onOpen();
+  const handleJoinClick = async (thread, e) => {
+    e.stopPropagation();
+
+    // 参加済みかどうかを確認
+    const isJoined =
+      thread.participants && thread.participants.includes(currentUser?.uid);
+
+    if (isJoined) {
+      // 参加済みの場合は直接スレッドに遷移
+      navigate(`/thread/${thread.id}`);
+    } else {
+      // 未参加の場合のみモーダルを表示
+      setSelectedThread(thread);
+      try {
+        await joinThread(thread.id, currentUser?.uid);
+        const updatedThreads = await getThreads();
+        setThreads(updatedThreads);
+        onOpen();
+      } catch (error) {
+        console.error('Error joining the thread:', error);
+        // エラー処理
+      }
+    }
   };
 
   const handleJoinConfirm = () => {
-    // ここで参加処理を実行
     navigate(`/thread/${selectedThread.id}`);
     onClose();
   };
 
-  // タグのランダムな背景色を生成する関数
   const getTagColor = (tag) => {
     const colors = [
       'linear-gradient(135deg, #FF0080 0%, #7928CA 100%)',
@@ -137,13 +156,29 @@ function ThreadList() {
                   <Button
                     onClick={(e) => handleJoinClick(thread, e)}
                     size="lg"
-                    bgGradient="linear(to-r, pink.400, purple.400)"
+                    bgGradient={
+                      thread.participants &&
+                      thread.participants.includes(currentUser?.uid)
+                        ? 'linear(to-r, green.400, teal.400)' // 参加済みの場合
+                        : 'linear(to-r, pink.400, purple.400)' // 未参加の場合
+                    }
                     color="white"
-                    leftIcon={<Icon as={FiUserPlus} />}
+                    leftIcon={
+                      thread.participants &&
+                      thread.participants.includes(currentUser?.uid) ? (
+                        <Icon as={FiCheckCircle} /> // 参加済みの場合
+                      ) : (
+                        <Icon as={FiUserPlus} />
+                      ) // 未参加の場合
+                    }
                     _hover={{
                       transform: 'translateY(-2px)',
                       boxShadow: '0 6px 10px -2px rgba(0, 0, 0, 0.2)',
-                      bgGradient: 'linear(to-r, pink.500, purple.500)',
+                      bgGradient:
+                        thread.participants &&
+                        thread.participants.includes(currentUser?.uid)
+                          ? 'linear(to-r, green.500, teal.500)' // 参加済みの場合
+                          : 'linear(to-r, pink.500, purple.500)', // 未参加の場合
                     }}
                     borderRadius="full"
                     px={8}
@@ -156,7 +191,11 @@ function ThreadList() {
                     gap={2}
                     flexShrink={0}
                   >
-                    参加する
+                    {/* 参加状態に応じてボタンのテキストを変更 */}
+                    {thread.participants &&
+                    thread.participants.includes(currentUser?.uid) // currentUser?.uidを使う
+                      ? 'スレッドに入る'
+                      : '参加する'}
                   </Button>
                 </HStack>
 
