@@ -13,12 +13,14 @@ import { auth } from '../config/firebase';
 
 const threadsCollection = collection(db, 'threads');
 
-export const createThread = async (title, content) => {
+export const createThread = async (title, content, tags, attachments) => {
   try {
     const user = auth.currentUser;
     const docRef = await addDoc(threadsCollection, {
       title,
       content,
+      tags,
+      attachments,
       createdAt: new Date(),
       createdBy: user ? user.uid : 'anonymous',
       comments: [],
