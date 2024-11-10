@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { getThreads } from '../services/threadService';
 import { Box, Text, VStack, HStack, Tag, Icon } from '@chakra-ui/react';
 import { motion } from 'framer-motion';
-import { FiHash, FiClock, FiMessageCircle } from 'react-icons/fi';
+import { FiHash, FiClock, FiMessageCircle, FiUser } from 'react-icons/fi';
 
 const MotionBox = motion(Box);
 const MotionTag = motion(Tag);
@@ -114,6 +114,10 @@ function ThreadList() {
               <HStack>
                 <Icon as={FiMessageCircle} />
                 <Text>{thread.commentCount || 0} コメント</Text>
+              </HStack>
+              <HStack>
+                <Icon as={FiUser} />
+                <Text>{thread.participantCount || 0}</Text>
               </HStack>
             </HStack>
           </VStack>
