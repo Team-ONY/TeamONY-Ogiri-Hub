@@ -8,6 +8,7 @@ import {
   doc,
   getDoc,
   arrayUnion,
+  arrayRemove,
 } from 'firebase/firestore';
 import { auth } from '../config/firebase';
 
@@ -137,6 +138,21 @@ export const joinThread = async (threadId, userId) => {
     console.log('User joined the thread successfully');
   } catch (error) {
     console.error('Error joining the thread:', error);
+    throw error;
+  }
+};
+
+export const deleteCommentFromThread = async (threadId, comment) => {
+  try {
+    const threadDoc = doc(db, 'threads', threadId);
+
+    await updateDoc(threadDoc, {
+      comments: arrayRemove(comment),
+    });
+
+    console.log('Comment deleted successfully:', comment);
+  } catch (error) {
+    console.error('Error deleting comment:', error);
     throw error;
   }
 };
