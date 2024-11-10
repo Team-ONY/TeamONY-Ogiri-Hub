@@ -24,6 +24,7 @@ export const createThread = async (title, content, tags, attachments) => {
       createdAt: new Date(),
       createdBy: user ? user.uid : 'anonymous',
       comments: [],
+      participants: [],
     });
     return docRef.id;
   } catch (error) {
@@ -122,5 +123,20 @@ export const addCommentToThread = async (id, comment) => {
   } catch (error) {
     console.error('Error adding comment:', error);
     throw error; // エラーを上位に伝播
+  }
+};
+
+export const joinThread = async (threadId, userId) => {
+  try {
+    console.log(('joinThread関数に渡されたthreadId:', threadId));
+    console.log(('joinThread関数に渡されたuserId:', userId));
+    const threadDoc = doc(db, 'threads', threadId);
+    await updateDoc(threadDoc, {
+      participants: arrayUnion(userId),
+    });
+    console.log('User joined the thread successfully');
+  } catch (error) {
+    console.error('Error joining the thread:', error);
+    throw error;
   }
 };
