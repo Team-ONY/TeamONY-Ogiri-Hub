@@ -15,7 +15,6 @@ function App() {
 
   return (
     <>
-      <div className="gradient-overlay" />
       {!hideHeaderRoutes.includes(location.pathname) && <Header />}
       <Routes>
         <Route path="/" element={<Navigate to="/signin" />} />
