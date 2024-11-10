@@ -33,7 +33,14 @@ export const createThread = async (title, content, tags, attachments) => {
 
 export const getThreads = async () => {
   const querySnapshot = await getDocs(threadsCollection);
-  return querySnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+  return querySnapshot.docs.map((doc) => {
+    const threadData = doc.data();
+    return {
+      id: doc.id,
+      ...threadData,
+      commentCount: threadData.comments ? threadData.comments.length : 0,
+    };
+  });
 };
 
 export const updateThread = async (id, updatedData) => {
