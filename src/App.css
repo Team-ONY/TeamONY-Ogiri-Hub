@@ -9,17 +9,3 @@
   flex-direction: column;
   font-family: 'Circular Std', sans-serif;
 }
-
-/* アニメーション付きのグラデーションオーバーレイを追加 */
-.gradient-overlay {
-  position: fixed;
-  top: 0;
-  right: 0;
-  width: 50%;
-  height: 50%;
-  background: radial-gradient(circle at top right,
-      rgba(255, 25, 136, 0.2),
-      transparent 70%);
-  pointer-events: none;
-  z-index: 1;
-}
