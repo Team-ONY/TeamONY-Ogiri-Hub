@@ -19,7 +19,7 @@ import {
   deleteCommentFromThread,
 } from '../services/threadService';
 import { getUserById } from '../services/userService';
-import { FaCrown, FaTrash } from 'react-icons/fa';
+import { FaCrown, FaTrash, FaArrowLeft } from 'react-icons/fa';
 
 const MotionBox = motion(Box);
 const MotionInput = motion(Input);
@@ -170,6 +170,31 @@ function ThreadDetail() {
 
   return (
     <VStack spacing={6} align="stretch" mt={20} pb={20}>
+      <MotionBox
+        position="fixed"
+        top="100px"
+        left={6}
+        zIndex={20}
+        initial={{ opacity: 0, x: -20 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ duration: 0.3 }}
+      >
+        <IconButton
+          icon={<Icon as={FaArrowLeft} />}
+          onClick={() => navigate('/thread')}
+          bg="linear-gradient(135deg, #FF1988 0%, #805AD5 100%)"
+          color="white"
+          size="lg"
+          borderRadius="full"
+          aria-label="Back to threads"
+          _hover={{
+            transform: 'translateY(-2px)',
+            boxShadow: '0 8px 15px -3px rgba(255, 25, 136, 0.3)',
+            bg: 'linear-gradient(135deg, #FF1988 20%, #6B46C1 120%)',
+          }}
+          _active={{ transform: 'scale(0.95)' }}
+        />
+      </MotionBox>
       <MotionBox
         p={6}
         bg="blackAlpha.500"

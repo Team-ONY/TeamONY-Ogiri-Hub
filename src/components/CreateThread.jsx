@@ -11,6 +11,7 @@ import {
   FormLabel,
   Container,
   Icon,
+  IconButton,
 } from '@chakra-ui/react';
 import { createThread } from '../services/threadService';
 import { motion } from 'framer-motion';
@@ -23,6 +24,7 @@ import {
   FiSend,
   FiUpload,
 } from 'react-icons/fi';
+import { FaArrowLeft } from 'react-icons/fa';
 
 const MotionBox = motion(Box);
 const MotionInput = motion(Input);
@@ -88,7 +90,27 @@ function CreateThread() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
+        position="relative"
       >
+        <IconButton // 追加: IconButton を追加
+          icon={<Icon as={FaArrowLeft} />}
+          onClick={() => navigate('/thread')}
+          bg="linear-gradient(135deg, #FF1988 0%, #805AD5 100%)"
+          color="white"
+          size="lg"
+          borderRadius="full"
+          aria-label="Back to threads"
+          _hover={{
+            transform: 'translateY(-2px)',
+            boxShadow: '0 8px 15px -3px rgba(255, 25, 136, 0.3)',
+            bg: 'linear-gradient(135deg, #FF1988 20%, #6B46C1 120%)',
+          }}
+          _active={{ transform: 'scale(0.95)' }}
+          position="absolute"
+          top="30px"
+          left="380px"
+          zIndex={1} // Boxにかぶるから
+        />
         <VStack spacing={10}>
           <Box textAlign="center">
             <Heading
