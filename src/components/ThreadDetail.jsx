@@ -9,12 +9,17 @@ import {
   Flex,
   Avatar,
   Icon,
+  IconButton,
 } from '@chakra-ui/react';
 import { motion } from 'framer-motion';
 import { auth } from '../config/firebase';
-import { getThreadById, addCommentToThread } from '../services/threadService';
+import {
+  getThreadById,
+  addCommentToThread,
+  deleteCommentFromThread,
+} from '../services/threadService';
 import { getUserById } from '../services/userService';
-import { FaCrown } from 'react-icons/fa';
+import { FaCrown, FaTrash } from 'react-icons/fa';
 
 const MotionBox = motion(Box);
 const MotionInput = motion(Input);
@@ -37,14 +42,6 @@ function ThreadDetail() {
     });
     return () => unsubscribe();
   }, []);
-
-  // デバッグ用
-  useEffect(() => {
-    console.log('Thread: ', thread);
-    console.log('User: ', user);
-    console.log('Thread createdBy: ', thread?.createdBy);
-    console.log('User UID: ', user?.uid);
-  }, [thread, user]);
 
   useEffect(() => {
     const fetchThread = async () => {
@@ -86,19 +83,25 @@ function ThreadDetail() {
   }, [id]);
 
   const handleAddComment = async () => {
+    // 空白だけのコメントを投稿できないようにする
     if (!comment.trim()) {
       setError('コメントを入力してください');
       return;
     }
 
     try {
-      await addCommentToThread(
-        id,
-        comment,
-        user.uid,
-        user.displayName,
-        user.photoURL
-      );
+      // 現在のユーザーの情報を取得
+      const currentUser = auth.currentUser;
+      const userId = currentUser ? currentUser.uid : 'anonymous';
+      const displayName = currentUser
+        ? currentUser.displayName
+        : 'Anonymous User';
+      const photoURL = currentUser ? currentUser.photoURL : null;
+
+      // スレッドに新しいコメントを追加
+      await addCommentToThread(id, comment, userId, displayName, photoURL);
+
+      // 新しいコメントの投稿に成功したら、入力欄をクリア
       setComment('');
 
       // コメント追加後にスレッドデータを再取得
@@ -122,6 +125,7 @@ function ThreadDetail() {
         });
       }
     } catch (error) {
+      // コメントの投稿に失敗したときのエラー処理
       console.error('Error adding comment:', error);
       setError('コメントの追加に失敗しました');
     }
@@ -145,6 +149,22 @@ function ThreadDetail() {
   if (!thread || !thread.comments) {
     return <div>Loading...</div>;
   }
+
+  const handleDeleteComment = async (comment) => {
+    try {
+      console.log('Deleting comment: ', comment);
+      await deleteCommentFromThread(id, comment.id);
+
+      // setThread を使用して thread.comments を更新
+      const updatedComments = thread.comments.filter(
+        (c) => c.id !== comment.id
+      );
+      setThread({ ...thread, comments: updatedComments });
+    } catch (error) {
+      console.error('Error deleting comment:', error);
+      setError('コメントの削除に失敗しました');
+    }
+  };
 
   return (
     <VStack spacing={6} align="stretch" mt={20} pb={20}>
@@ -245,50 +265,62 @@ function ThreadDetail() {
           <MotionBox
             key={index}
             p={4}
-            bg="blackAlpha.500"
+            bg="blackAlpha.400"
             borderRadius="xl"
-            boxShadow="0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)"
-            mt={6}
-            initial={{ opacity: 0, y: 10 }}
+            width="100%"
+            style={{ boxSizing: 'border-box' }}
+            mx="auto"
+            initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.1, duration: 0.5 }}
+            transition={{ delay: index * 0.1, duration: 0.3 }}
           >
-            <Flex align="center" mb={2}>
-              <Avatar
-                name={comment.createdByUsername}
-                src={comment.userPhotoURL}
-                size="sm"
-                mr={2}
-                border={comment.isAdmin ? '2px solid' : 'none'}
-                borderColor="pink.400"
-              />
-              <Flex align="center" gap={2}>
-                <Text
-                  color={comment.isAdmin ? 'pink.300' : 'gray.500'}
-                  fontSize="sm"
-                  fontWeight={comment.isAdmin ? 'bold' : 'normal'}
-                >
-                  {comment.createdByUsername}
-                </Text>
-                {comment.isAdmin && (
-                  <Icon
-                    as={FaCrown}
-                    color="pink.400"
-                    w={3}
-                    h={3}
-                    title="スレッド管理者"
-                  />
-                )}
-                <Text color="gray.500" fontSize="xs">
-                  {new Date(comment.createdAt?.toDate()).toLocaleString()}
-                </Text>
-              </Flex>
-            </Flex>
-            <Text
-              color="gray.300"
-              fontSize="md"
-              pl={10} // アバターに合わせてテキストをインデント
+            <Flex
+              align="center"
+              mb={2}
+              justifyContent="space-between"
+              flexWrap="wrap"
+              width="100%"
+              style={{ boxSizing: 'border-box' }}
             >
+              <Flex align="center" gap={2}>
+                <Avatar
+                  name={comment.createdByUsername}
+                  src={comment.userPhotoURL}
+                  size="sm"
+                  mr={2}
+                  border={comment.isAdmin ? '2px solid' : 'none'}
+                  borderColor="pink.400"
+                />
+                <Flex align="center" gap={2}>
+                  <Text color="gray.400" fontSize="sm">
+                    {comment.createdByUsername}
+                  </Text>
+                  {comment.isAdmin && (
+                    <Icon
+                      as={FaCrown}
+                      color="pink.400"
+                      w={3}
+                      h={3}
+                      title="スレッド管理者"
+                    />
+                  )}
+                  <Text color="gray.500" fontSize="xs">
+                    {new Date(comment.createdAt.toDate()).toLocaleString()}
+                  </Text>
+                </Flex>
+              </Flex>
+              {user && user.uid === thread.createdBy && (
+                <IconButton
+                  aria-label="Delete comment"
+                  icon={<Icon as={FaTrash} />}
+                  onClick={() => handleDeleteComment(comment)}
+                  colorScheme="red"
+                  variant="ghost"
+                  minWidth="30px"
+                />
+              )}
+            </Flex>
+            <Text color="gray.300" fontSize="md" pl={10}>
               {comment.text}
             </Text>
           </MotionBox>
