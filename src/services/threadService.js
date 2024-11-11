@@ -41,6 +41,9 @@ export const getThreads = async () => {
       id: doc.id,
       ...threadData,
       commentCount: threadData.comments ? threadData.comments.length : 0,
+      participantCount: doc.data().participants
+        ? doc.data().participants.length
+        : 0,
     };
   });
 };
