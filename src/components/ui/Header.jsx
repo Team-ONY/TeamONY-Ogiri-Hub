@@ -62,7 +62,7 @@ function Header() {
       height="80px"
       zIndex="1000"
       borderBottom="1px solid rgba(255, 25, 136, 0.1)"
-      borderRadius="lg"
+      borderRadius="0 0 1em 1em"
     >
       <IconButton
         icon={<HamburgerIcon boxSize={6} />}
