@@ -48,9 +48,7 @@ function ThreadList() {
     fetchThreads();
   }, []);
 
-  const handleJoinClick = async (thread, e) => {
-    e.stopPropagation();
-
+  const handleJoinClick = async (thread) => {
     // 参加済みかどうかを確認
     const isJoined =
       thread.participants && thread.participants.includes(currentUser?.uid);
@@ -61,21 +59,21 @@ function ThreadList() {
     } else {
       // 未参加の場合のみモーダルを表示
       setSelectedThread(thread);
-      try {
-        await joinThread(thread.id, currentUser?.uid);
-        const updatedThreads = await getThreads();
-        setThreads(updatedThreads);
-        onOpen();
-      } catch (error) {
-        console.error('Error joining the thread:', error);
-        // エラー処理
-      }
+      onOpen();
     }
   };
 
-  const handleJoinConfirm = () => {
-    navigate(`/thread/${selectedThread.id}`);
-    onClose();
+  const handleJoinConfirm = async () => {
+    try {
+      await joinThread(selectedThread.id, currentUser?.uid);
+      const updatedThreads = await getThreads();
+      setThreads(updatedThreads);
+      navigate(`/thread/${selectedThread.id}`);
+      onClose();
+    } catch (error) {
+      console.error('Error joining the thread:', error);
+      // エラー処理
+    }
   };
 
   const getTagColor = (tag) => {
@@ -154,7 +152,7 @@ function ThreadList() {
                   </VStack>
 
                   <Button
-                    onClick={(e) => handleJoinClick(thread, e)}
+                    onClick={() => handleJoinClick(thread)}
                     size="lg"
                     bgGradient={
                       thread.participants &&
