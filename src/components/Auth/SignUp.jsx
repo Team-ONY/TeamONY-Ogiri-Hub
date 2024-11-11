@@ -22,6 +22,7 @@ import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { doc, setDoc } from 'firebase/firestore';
 import { db } from '../../config/firebase';
+import { updateProfile } from 'firebase/auth';
 
 const gradientAnimation = keyframes`
   0% { background-position: 0% 50% }
@@ -51,6 +52,11 @@ function SignUp() {
         password
       );
       const user = userCredential.user;
+
+      // displayNameを設定
+      await updateProfile(user, {
+        displayName: username,
+      });
 
       // Firestoreにユーザー情報を保存
       try {
