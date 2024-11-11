@@ -30,15 +30,17 @@ function ThreadDetail() {
   const [thread, setThread] = useState(null);
   const [comment, setComment] = useState('');
   const [error, setError] = useState('');
-  const userInfo = auth.currentUser; // 現在のユーザーを取得
   const [user, setUser] = useState(auth.currentUser);
+  const [isLoadingUser, setIsLoadingUser] = useState(true);
   const navigate = useNavigate();
   const [threadCreator, setThreadCreator] = useState(null);
   const commentsEndRef = useRef(null);
 
   useEffect(() => {
+    // userが変更されたら再レンダリング
     const unsubscribe = auth.onAuthStateChanged((user) => {
       setUser(user);
+      setIsLoadingUser(false); // ユーザー情報読み込み完了
     });
     return () => unsubscribe();
   }, []);
@@ -347,14 +349,16 @@ function ThreadDetail() {
           borderColor="whiteAlpha.200"
         >
           <Flex align="center" mb={6}>
-            <Avatar
-              name={userInfo ? userInfo.displayName : 'You'}
-              src={userInfo ? userInfo.photoURL : ''}
-              size="md"
-              mr={3}
-              border="2px solid"
-              borderColor="pink.400"
-            />
+            {!isLoadingUser && ( // isLoadingUser が false の場合のみ Avatar を表示
+              <Avatar
+                name={user ? user.displayName : 'Anonymous'} // userがnullの場合は"Anonymous"を表示
+                src={user?.photoURL || ''} // user が null の場合空文字列を設定
+                size="md"
+                mr={3}
+                border="2px solid"
+                borderColor="pink.400"
+              />
+            )}
             <MotionInput
               placeholder="コメントを追加"
               value={comment}
