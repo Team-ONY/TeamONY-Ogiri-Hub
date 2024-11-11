@@ -66,13 +66,14 @@ export const getThreadById = async (id) => {
       // コメントに含まれるユーザー情報を取得
       if (threadData.comments && threadData.comments.length > 0) {
         const commentsWithUserInfo = await Promise.all(
-          threadData.comments.map(async (comment) => {
+          threadData.comments.map(async (comment, index) => {
             try {
               const userDoc = await getDoc(doc(db, 'users', comment.createdBy));
               const userData = userDoc.exists() ? userDoc.data() : null;
 
               return {
                 ...comment,
+                id: comment.id || index.toString(), // comment.id が存在しない場合は index を文字列に変換して id として設定
                 userInfo: userData || { username: 'Unknown User' },
               };
             } catch (error) {
@@ -99,31 +100,37 @@ export const getThreadById = async (id) => {
   }
 };
 
-export const addCommentToThread = async (id, comment) => {
+export const addCommentToThread = async (
+  threadId,
+  text,
+  userId,
+  userName,
+  userPhotoURL
+) => {
   try {
-    const user = auth.currentUser;
-    if (!user) {
-      throw new Error('User must be logged in to comment');
-    }
+    const threadRef = doc(db, 'threads', threadId);
+    const createdAt = new Date(); // クライアント側でタイムスタンプを生成
 
-    const threadDoc = doc(db, 'threads', id);
-    const commentData = {
-      text: comment,
-      createdBy: user.uid,
-      createdByUsername: user.displayName,
-      userPhotoURL: user.photoURL,
-      createdAt: new Date(),
+    // commentRefは、コメントをcommentsサブコレクションに追加する場合にのみ使用します。
+    // スレッドドキュメントに直接コメントを追加するため、ここでは不要です。
+
+    const newComment = {
+      id: new Date().getTime().toString(), // commentIdをクライアント側で生成。getTime()はミリ秒単位の数値を返すので、toString()で文字列に変換。
+      text,
+      createdAt: createdAt, // クライアント側で生成したタイムスタンプを使用
+      createdBy: userId,
+      createdByUsername: userName,
+      userPhotoURL: userPhotoURL,
     };
 
-    await updateDoc(threadDoc, {
-      comments: arrayUnion(commentData),
+    await updateDoc(threadRef, {
+      comments: arrayUnion(newComment),
     });
 
-    console.log('Comment added successfully:', commentData); // デバッグ用
-    return commentData; // 追加したコメントデータを返す
+    return newComment;
   } catch (error) {
     console.error('Error adding comment:', error);
-    throw error; // エラーを上位に伝播
+    throw error;
   }
 };
 
@@ -142,15 +149,25 @@ export const joinThread = async (threadId, userId) => {
   }
 };
 
-export const deleteCommentFromThread = async (threadId, comment) => {
+export const deleteCommentFromThread = async (threadId, commentId) => {
   try {
-    const threadDoc = doc(db, 'threads', threadId);
+    const threadRef = doc(db, 'threads', threadId);
+    const threadDoc = await getDoc(threadRef); // threadドキュメントを取得
+    const thread = threadDoc.data(); // threadデータを取得
 
-    await updateDoc(threadDoc, {
-      comments: arrayRemove(comment),
+    if (!thread) {
+      throw new Error('Thread not found'); // threadが存在しない場合のエラー処理
+    }
+
+    const commentIdString =
+      typeof commentId === 'string' ? commentId : commentId.toString();
+
+    // Firestoreの配列からコメントを削除
+    await updateDoc(threadRef, {
+      comments: arrayRemove(
+        thread.comments.find((comment) => comment.id === commentIdString)
+      ),
     });
-
-    console.log('Comment deleted successfully:', comment);
   } catch (error) {
     console.error('Error deleting comment:', error);
     throw error;
