@@ -30,15 +30,17 @@ function ThreadDetail() {
   const [thread, setThread] = useState(null);
   const [comment, setComment] = useState('');
   const [error, setError] = useState('');
-  const userInfo = auth.currentUser; // 現在のユーザーを取得
   const [user, setUser] = useState(auth.currentUser);
+  const [isLoadingUser, setIsLoadingUser] = useState(true);
   const navigate = useNavigate();
   const [threadCreator, setThreadCreator] = useState(null);
   const commentsEndRef = useRef(null);
 
   useEffect(() => {
+    // userが変更されたら再レンダリング
     const unsubscribe = auth.onAuthStateChanged((user) => {
       setUser(user);
+      setIsLoadingUser(false); // ユーザー情報読み込み完了
     });
     return () => unsubscribe();
   }, []);
@@ -273,6 +275,7 @@ function ThreadDetail() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.1, duration: 0.3 }}
+            mb={4}
           >
             <Flex
               align="center"
@@ -330,47 +333,59 @@ function ThreadDetail() {
         <div ref={commentsEndRef} />
 
         <MotionBox
-          p={4}
-          bgGradient="radial(circle at top left, rgba(255, 105, 180, 0.5), rgba(0, 0, 0, 1))"
-          borderRadius="xl"
-          boxShadow="0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)"
+          p={5}
+          bgGradient="radial(circle at top left, rgba(255, 105, 180, 0.3), rgba(0, 0, 0, 0.95))"
+          borderRadius="2xl"
+          boxShadow="0 20px 25px -5px rgba(0, 0, 0, 0.2), 0 10px 10px -5px rgba(0, 0, 0, 0.1)"
           position="fixed"
-          bottom={0}
+          bottom={4}
           left={0}
           right={0}
           zIndex={10}
           width="1100px"
           mx="auto"
+          backdropFilter="blur(8px)"
+          border="1px solid"
+          borderColor="whiteAlpha.200"
         >
-          <Flex align="center" mb={7}>
-            <Avatar
-              name={userInfo ? userInfo.displayName : 'You'}
-              src={userInfo ? userInfo.photoURL : ''}
-              size="sm"
-              mr={2}
-            />
+          <Flex align="center" mb={6}>
+            {!isLoadingUser && ( // isLoadingUser が false の場合のみ Avatar を表示
+              <Avatar
+                name={user ? user.displayName : 'Anonymous'} // userがnullの場合は"Anonymous"を表示
+                src={user?.photoURL || ''} // user が null の場合空文字列を設定
+                size="md"
+                mr={3}
+                border="2px solid"
+                borderColor="pink.400"
+              />
+            )}
             <MotionInput
               placeholder="コメントを追加"
               value={comment}
               onChange={(e) => {
                 setComment(e.target.value);
                 if (error) {
-                  setError(''); // 入力が始まったらエラーをクリア
+                  setError('');
                 }
               }}
-              bg="blackAlpha.900"
+              bg="blackAlpha.700"
               color="white"
-              borderRadius="full"
-              py={3}
-              px={4}
-              fontSize="sm"
+              borderRadius="xl"
+              py={4}
+              px={5}
+              fontSize="md"
               border="2px solid"
-              borderColor="whiteAlpha.400"
-              _hover={{ borderColor: 'pink.600' }}
+              borderColor="whiteAlpha.300"
+              _hover={{
+                borderColor: 'pink.500',
+                boxShadow: '0 0 15px rgba(255, 105, 180, 0.15)',
+              }}
               _focus={{
                 borderColor: 'pink.400',
-                boxShadow: '0 0 0 1px #FF1988',
+                boxShadow: '0 0 0 2px rgba(255, 25, 136, 0.4)',
+                bg: 'blackAlpha.800',
               }}
+              _placeholder={{ color: 'whiteAlpha.600' }}
               initial={{ opacity: 0, x: -10 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.4, duration: 0.5 }}
@@ -379,25 +394,35 @@ function ThreadDetail() {
             <MotionButton
               onClick={handleAddComment}
               colorScheme="pink"
-              size="sm"
+              size="lg"
               fontWeight="bold"
-              borderRadius="full"
-              px={6}
-              ml={2}
+              borderRadius="xl"
+              px={8}
+              ml={3}
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.5, duration: 0.5 }}
               _hover={{
                 transform: 'translateY(-2px)',
-                boxShadow: '0 8px 15px -3px rgba(255, 25, 136, 0.3)',
+                boxShadow: '0 12px 20px -4px rgba(255, 25, 136, 0.3)',
+                bg: 'pink.500',
               }}
-              _active={{ transform: 'scale(0.95)' }}
+              _active={{
+                transform: 'scale(0.98)',
+                bg: 'pink.600',
+              }}
             >
               コメントする
             </MotionButton>
           </Flex>
           {error && (
-            <Text color="pink.300" fontSize="sm" textAlign="center" mt={2}>
+            <Text
+              color="pink.300"
+              fontSize="sm"
+              textAlign="center"
+              mt={2}
+              fontWeight="medium"
+            >
               {error}
             </Text>
           )}
