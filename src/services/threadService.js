@@ -25,7 +25,7 @@ export const createThread = async (title, content, tags, attachments) => {
       createdAt: new Date(),
       createdBy: user ? user.uid : 'anonymous',
       comments: [],
-      participants: [],
+      participants: user ? [user.uid] : [],
     });
     return docRef.id;
   } catch (error) {
