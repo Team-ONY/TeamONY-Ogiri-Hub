@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getThreads, joinThread } from '../services/threadService'; // joinThreadを追加
+import { getThreads, joinThread } from '../services/threadService';
 import {
   Box,
   Text,
@@ -29,11 +29,12 @@ import {
   FiAlertCircle,
 } from 'react-icons/fi';
 import { auth } from '../config/firebase';
+import PropTypes from 'prop-types';
 
 const MotionBox = motion(Box);
 const MotionTag = motion(Tag);
 
-function ThreadList() {
+function ThreadList({ searchTerm, sortBy }) {
   const [threads, setThreads] = useState([]);
   const [selectedThread, setSelectedThread] = useState(null);
   const { isOpen, onOpen, onClose } = useDisclosure();
@@ -49,15 +50,12 @@ function ThreadList() {
   }, []);
 
   const handleJoinClick = async (thread) => {
-    // 参加済みかどうかを確認
     const isJoined =
       thread.participants && thread.participants.includes(currentUser?.uid);
 
     if (isJoined) {
-      // 参加済みの場合は直接スレッドに遷移
       navigate(`/thread/${thread.id}`);
     } else {
-      // 未参加の場合のみモーダルを表示
       setSelectedThread(thread);
       onOpen();
     }
@@ -72,7 +70,6 @@ function ThreadList() {
       onClose();
     } catch (error) {
       console.error('Error joining the thread:', error);
-      // エラー処理
     }
   };
 
@@ -90,10 +87,31 @@ function ThreadList() {
     return colors[index];
   };
 
+  const filteredThreads = threads.filter((thread) => {
+    const titleMatch = thread.title
+      .toLowerCase()
+      .includes(searchTerm.toLowerCase());
+    const contentMatch = thread.content
+      .toLowerCase()
+      .includes(searchTerm.toLowerCase());
+    return titleMatch || contentMatch;
+  });
+
+  const sortedThreads = [...filteredThreads].sort((a, b) => {
+    if (sortBy === 'newest') {
+      return b.createdAt.toDate() - a.createdAt.toDate();
+    } else if (sortBy === 'popular') {
+      return b.participantCount - a.participantCount;
+    } else if (sortBy === 'commentCount') {
+      return b.commentCount - a.commentCount;
+    }
+    return 0;
+  });
+
   return (
     <>
       <VStack spacing={6} align="stretch" px={4} maxW="1200px" mx="auto">
-        {threads.map((thread, index) => (
+        {sortedThreads.map((thread, index) => (
           <MotionBox
             key={thread.id}
             bg="linear-gradient(170deg, rgba(18, 18, 18, 0.8) 0%, rgba(30, 30, 30, 0.8) 100%)"
@@ -113,7 +131,6 @@ function ThreadList() {
             overflow="hidden"
             position="relative"
           >
-            {/* グラデーションオーバーレイ */}
             <Box
               position="absolute"
               top={0}
@@ -124,10 +141,8 @@ function ThreadList() {
               pointerEvents="none"
             />
 
-            {/* メインコンテンツ */}
             <Box p={8} position="relative">
               <VStack align="stretch" spacing={6}>
-                {/* ヘッダー */}
                 <HStack justify="space-between" align="start">
                   <VStack align="start" spacing={4} flex={1}>
                     <Text
@@ -143,40 +158,25 @@ function ThreadList() {
                     <Text
                       fontSize="lg"
                       color="gray.300"
-                      lineHeight="1.6"
-                      noOfLines={2}
-                      maxW="80%"
-                    >
-                      {thread.content}
-                    </Text>
+                      dangerouslySetInnerHTML={{ __html: thread.content }}
+                    />
                   </VStack>
-
                   <Button
                     onClick={() => handleJoinClick(thread)}
-                    size="lg"
+                    leftIcon={<Icon as={FiUserPlus} />}
                     bgGradient={
                       thread.participants &&
                       thread.participants.includes(currentUser?.uid)
-                        ? 'linear(to-r, green.400, teal.400)' // 参加済みの場合
-                        : 'linear(to-r, pink.400, purple.400)' // 未参加の場合
+                        ? 'linear(to-r, green.400, teal.400)'
+                        : 'linear(to-r, pink.400, purple.400)'
                     }
                     color="white"
-                    leftIcon={
-                      thread.participants &&
-                      thread.participants.includes(currentUser?.uid) ? (
-                        <Icon as={FiCheckCircle} /> // 参加済みの場合
-                      ) : (
-                        <Icon as={FiUserPlus} />
-                      ) // 未参加の場合
-                    }
                     _hover={{
-                      transform: 'translateY(-2px)',
-                      boxShadow: '0 6px 10px -2px rgba(0, 0, 0, 0.2)',
                       bgGradient:
                         thread.participants &&
                         thread.participants.includes(currentUser?.uid)
-                          ? 'linear(to-r, green.500, teal.500)' // 参加済みの場合
-                          : 'linear(to-r, pink.500, purple.500)', // 未参加の場合
+                          ? 'linear(to-r, green.500, teal.500)'
+                          : 'linear(to-r, pink.500, purple.500)',
                     }}
                     borderRadius="full"
                     px={8}
@@ -189,15 +189,13 @@ function ThreadList() {
                     gap={2}
                     flexShrink={0}
                   >
-                    {/* 参加状態に応じてボタンのテキストを変更 */}
                     {thread.participants &&
-                    thread.participants.includes(currentUser?.uid) // currentUser?.uidを使う
+                    thread.participants.includes(currentUser?.uid)
                       ? 'スレッドに入る'
                       : '参加する'}
                   </Button>
                 </HStack>
 
-                {/* タグセクション */}
                 {thread.tags && thread.tags.length > 0 && (
                   <HStack spacing={2} flexWrap="wrap">
                     {thread.tags.map((tag, tagIndex) => (
@@ -208,7 +206,7 @@ function ThreadList() {
                         transition={{ delay: index * 0.1 + tagIndex * 0.1 }}
                         px={4}
                         py={2}
-                        bg={getTagColor(tag)} // タグの色をgetTagColor関数で決定
+                        bg={getTagColor(tag)}
                         color="white"
                         fontSize="sm"
                         fontWeight="medium"
@@ -229,7 +227,6 @@ function ThreadList() {
                   </HStack>
                 )}
 
-                {/* メタ情報 */}
                 <HStack
                   spacing={6}
                   color="whiteAlpha.700"
@@ -331,5 +328,15 @@ function ThreadList() {
     </>
   );
 }
+
+ThreadList.propTypes = {
+  searchTerm: PropTypes.string,
+  sortBy: PropTypes.oneOf(['newest', 'popular', 'commentCount']),
+};
+
+ThreadList.defaultProps = {
+  searchTerm: '',
+  sortBy: 'newest',
+};
 
 export default ThreadList;
