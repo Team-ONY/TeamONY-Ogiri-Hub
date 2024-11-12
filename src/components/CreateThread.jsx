@@ -92,7 +92,7 @@ function CreateThread() {
         transition={{ duration: 0.6 }}
         position="relative"
       >
-        <IconButton // 追加: IconButton を追加
+        <IconButton
           icon={<Icon as={FaArrowLeft} />}
           onClick={() => navigate('/thread')}
           bg="linear-gradient(135deg, #FF1988 0%, #805AD5 100%)"
@@ -108,7 +108,7 @@ function CreateThread() {
           _active={{ transform: 'scale(0.95)' }}
           position="absolute"
           top="30px"
-          left="380px"
+          left="30px"
           zIndex={1} // Boxにかぶるから
         />
         <VStack spacing={10}>
@@ -121,12 +121,13 @@ function CreateThread() {
               letterSpacing="tight"
               display="flex"
               alignItems="center"
+              ml={-100}
               gap={3}
             >
               <Icon as={FiEdit3} />
               #Create New Thread
             </Heading>
-            <Text color="whiteAlpha.700" mt={3}>
+            <Text color="whiteAlpha.700" mt={3} ml={-5}>
               あなたの素敵な投稿をお待ちしています ✨
             </Text>
           </Box>
