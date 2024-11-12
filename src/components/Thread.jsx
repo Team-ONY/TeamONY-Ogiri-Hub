@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import {
   Box,
   Heading,
@@ -13,7 +14,6 @@ import {
   MenuItem,
   Tag,
   HStack,
-  IconButton,
 } from '@chakra-ui/react';
 import { useNavigate } from 'react-router-dom';
 import ThreadList from './ThreadList';
@@ -39,6 +39,17 @@ function Thread() {
   const bgGradient = 'linear(to-br, blackAlpha.800, gray.900)';
   const accentColor = 'pink.400';
 
+  const [searchTerm, setSearchTerm] = useState('');
+  const [sortBy, setSortBy] = useState('newest');
+
+  const handleSearchChange = (event) => {
+    setSearchTerm(event.target.value);
+  };
+
+  const handleSortChange = (sortOption) => {
+    setSortBy(sortOption);
+  };
+
   return (
     <Box minH="100vh" bg={bgGradient} pt={20} px={4}>
       <MotionBox
@@ -48,7 +59,6 @@ function Thread() {
         animate={{ opacity: 1 }}
         transition={{ duration: 0.5 }}
       >
-        {/* ヘッダーセクション */}
         <Flex justify="space-between" align="center" mb={8}>
           <Flex align="center">
             <ThreadIcon style={{ fill: 'white' }} boxSize={6} mr={2} />
@@ -80,7 +90,6 @@ function Thread() {
           </MotionButton>
         </Flex>
 
-        {/* 検索・フィルターセクション */}
         <Flex
           gap={4}
           mb={8}
@@ -103,6 +112,8 @@ function Thread() {
                 boxShadow: `0 0 0 1px ${accentColor}`,
                 borderColor: 'transparent',
               }}
+              value={searchTerm}
+              onChange={handleSearchChange}
             />
           </InputGroup>
 
@@ -131,32 +142,39 @@ function Thread() {
                 >
                   <Flex align="center" gap={2}>
                     <TimeIcon />
-                    <Text>表示順</Text>
+                    <Text>
+                      {sortBy === 'newest'
+                        ? '最新順'
+                        : sortBy === 'popular'
+                          ? '人気順'
+                          : 'コメント数順'}
+                    </Text>
                   </Flex>
                 </MenuButton>
                 <MenuList
-                  bg="rgba(0, 0, 0, 0.9)" // 背景色を濃くして
+                  bg="rgba(0, 0, 0, 0.9)"
                   backdropFilter="blur(16px)"
                   borderColor="whiteAlpha.200"
-                  boxShadow="dark-lg" // シャドウを濃く
+                  boxShadow="dark-lg"
                   py={2}
                 >
                   <MotionMenuItem
                     _hover={{ bg: 'whiteAlpha.200' }}
-                    _focus={{ bg: 'whiteAlpha.200' }} // フォーカス時のスタイルも追加
-                    color="white" // テキストカラーを白に
+                    _focus={{ bg: 'whiteAlpha.200' }}
+                    color="white"
                     transition="all 0.2s"
                     whileHover={{ x: 5 }}
                     px={4}
                     py={3}
-                    bg="transparent" // 背景を透明に
+                    bg="transparent"
+                    onClick={() => handleSortChange('newest')}
                   >
                     <Flex align="center" justify="space-between" w="full">
                       <Flex align="center" gap={3}>
                         <TimeIcon />
                         <Text>最新順</Text>
                       </Flex>
-                      <CheckIcon color={accentColor} />
+                      {sortBy === 'newest' && <CheckIcon color={accentColor} />}
                     </Flex>
                   </MotionMenuItem>
                   <MotionMenuItem
@@ -168,10 +186,16 @@ function Thread() {
                     px={4}
                     py={3}
                     bg="transparent"
+                    onClick={() => handleSortChange('popular')}
                   >
-                    <Flex align="center" gap={3}>
-                      <StarIcon />
-                      <Text>人気順</Text>
+                    <Flex align="center" justify="space-between" w="full">
+                      <Flex align="center" gap={3}>
+                        <StarIcon />
+                        <Text>人気順</Text>
+                      </Flex>
+                      {sortBy === 'popular' && (
+                        <CheckIcon color={accentColor} />
+                      )}
                     </Flex>
                   </MotionMenuItem>
                   <MotionMenuItem
@@ -183,10 +207,16 @@ function Thread() {
                     px={4}
                     py={3}
                     bg="transparent"
+                    onClick={() => handleSortChange('commentCount')}
                   >
-                    <Flex align="center" gap={3}>
-                      <ChatIcon />
-                      <Text>コメント数順</Text>
+                    <Flex align="center" justify="space-between" w="full">
+                      <Flex align="center" gap={3}>
+                        <ChatIcon />
+                        <Text>コメント数順</Text>
+                      </Flex>
+                      {sortBy === 'commentCount' && (
+                        <CheckIcon color={accentColor} />
+                      )}
                     </Flex>
                   </MotionMenuItem>
                 </MenuList>
@@ -195,7 +225,6 @@ function Thread() {
           </Menu>
         </Flex>
 
-        {/* カテゴリータグ */}
         <Box mb={8}>
           <Box overflow="hidden" mx={-4} px={4}>
             <HStack
@@ -205,10 +234,10 @@ function Thread() {
               pt={2}
               sx={{
                 '&::-webkit-scrollbar': {
-                  display: 'none', // スクロールバーを非表示に
+                  display: 'none',
                 },
-                scrollbarWidth: 'none', // Firefox用
-                '-ms-overflow-style': 'none', // IE/Edge用
+                scrollbarWidth: 'none',
+                '-ms-overflow-style': 'none',
               }}
             >
               {['すべて', '議論', '質問', '雑談', '趣味', '技術'].map(
@@ -263,7 +292,6 @@ function Thread() {
           </Box>
         </Box>
 
-        {/* メインコンテンツ */}
         <MotionBox
           bg="blackAlpha.500"
           backdropFilter="blur(10px)"
@@ -273,27 +301,7 @@ function Thread() {
           animate={{ y: 0, opacity: 1 }}
           transition={{ duration: 0.5 }}
         >
-          {/* ソートボタン */}
-          <Flex justify="flex-end" mb={4}>
-            <HStack spacing={2}>
-              <IconButton
-                icon={<TimeIcon />}
-                variant="ghost"
-                colorScheme="whiteAlpha"
-                aria-label="Sort by time"
-                size="sm"
-              />
-              <IconButton
-                icon={<StarIcon />}
-                variant="ghost"
-                colorScheme="whiteAlpha"
-                aria-label="Sort by popularity"
-                size="sm"
-              />
-            </HStack>
-          </Flex>
-
-          <ThreadList />
+          <ThreadList searchTerm={searchTerm} sortBy={sortBy} />
         </MotionBox>
       </MotionBox>
     </Box>
