@@ -36,7 +36,7 @@ const UserInfoCard = ({ user }) => (
     <VStack spacing={4}>
       <Avatar
         size="2xl"
-        src={user?.photoURL || ''}
+        src={user?.photoURL || 'defaultPhotoURL'}
         border="4px solid"
         borderColor="purple.500"
         boxShadow="0 0 20px rgba(138, 43, 226, 0.4)"
