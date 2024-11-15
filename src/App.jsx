@@ -8,6 +8,8 @@ import Thread from './components/Thread';
 import ThreadDetail from './components/ThreadDetail';
 import CreateThread from './components/CreateThread';
 import AdminPage from './components/AdminPage';
+import ProfileMasonry from './components/Profile/ProfileMasonry';
+import ProfileEdit from './components/ProfileEdit';
 
 function App() {
   const location = useLocation();
@@ -25,6 +27,8 @@ function App() {
         <Route path="/thread/:id" element={<ThreadDetail />} />
         <Route path="/create-thread" element={<CreateThread />} />
         <Route path="/admin/:id" element={<AdminPage />} />
+        <Route path="/profile" element={<ProfileMasonry />} />
+        <Route path="/profile/edit" element={<ProfileEdit />} />
       </Routes>
     </>
   );
