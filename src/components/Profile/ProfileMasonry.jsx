@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Masonry from 'react-masonry-css';
 import { Box } from '@chakra-ui/react';
+// eslint-disable-next-line no-unused-vars
 import { motion } from 'framer-motion';
 import { auth, db } from '../../config/firebase';
 import { collection, query, where, getDocs, orderBy } from 'firebase/firestore';
@@ -19,17 +20,19 @@ import AchievementCard from './AchievementCard';
 import HallOfFameCard from './HallOfFameCard';
 import '../ProfileStyles.css';
 
-const MotionBox = motion(Box);
+//const MotionBox = motion(Box);
 
 const ProfileMasonry = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(null);
+  // eslint-disable-next-line no-unused-vars
   const [userStats, setUserStats] = useState({
     totalPosts: 0,
     totalHallOfFame: 0,
     streak: 0,
   });
+  // eslint-disable-next-line no-unused-vars
   const [achievements, setAchievements] = useState([]);
   const [hallOfFamePosts, setHallOfFamePosts] = useState([]);
 
