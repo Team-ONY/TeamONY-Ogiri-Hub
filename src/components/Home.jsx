@@ -171,7 +171,7 @@ function Home() {
               <Heading size="md" color="white" mb={6}>
                 最新のスレッド
               </Heading>
-              <ThreadList />
+              <ThreadList layout="list" />
             </MotionBox>
           </MotionBox>
         </GridItem>
