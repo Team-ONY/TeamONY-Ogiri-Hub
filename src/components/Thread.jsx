@@ -301,7 +301,7 @@ function Thread() {
           animate={{ y: 0, opacity: 1 }}
           transition={{ duration: 0.5 }}
         >
-          <ThreadList searchTerm={searchTerm} sortBy={sortBy} />
+          <ThreadList searchTerm={searchTerm} sortBy={sortBy} layout="grid" />
         </MotionBox>
       </MotionBox>
     </Box>
