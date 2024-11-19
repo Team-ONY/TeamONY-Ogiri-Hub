@@ -18,7 +18,7 @@ import UserInfoCard from './UserInfoCard';
 import StatCard from './StatCard';
 import AchievementCard from './AchievementCard';
 import HallOfFameCard from './HallOfFameCard';
-import '../ProfileStyles.css';
+import '../Profile/ProfileMasonry.css';
 
 //const MotionBox = motion(Box);
 
