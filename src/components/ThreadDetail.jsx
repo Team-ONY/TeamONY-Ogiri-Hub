@@ -359,7 +359,7 @@ function ThreadDetail() {
 
         <MotionBox
           p={5}
-          bgGradient="radial(circle at top left, rgba(255, 105, 180, 0.3), rgba(0, 0, 0, 0.95))"
+          bgGradient="radial(circle at top left, rgba(255, 105, 180, 0.8), rgba(0, 0, 0, 1))"
           borderRadius="2xl"
           boxShadow="0 20px 25px -5px rgba(0, 0, 0, 0.2), 0 10px 10px -5px rgba(0, 0, 0, 0.1)"
           position="fixed"
