@@ -29,7 +29,7 @@ import {
   CheckIcon,
   ChatIcon,
 } from '@chakra-ui/icons';
-import ThreadIcon from '../Icons/TheadIcon';
+import ThreadIcon from '../../Icons/TheadIcon';
 
 const MotionBox = motion(Box);
 const MotionButton = motion(Button);

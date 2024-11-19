@@ -12,13 +12,13 @@ import {
   IconButton,
 } from '@chakra-ui/react';
 import { motion } from 'framer-motion';
-import { auth } from '../config/firebase';
+import { auth } from '../../config/firebase';
 import {
   getThreadById,
   addCommentToThread,
   deleteCommentFromThread,
-} from '../services/threadService';
-import { getUserById } from '../services/userService';
+} from '../../services/threadService';
+import { getUserById } from '../../services/userService';
 import { FaCrown, FaTrash, FaArrowLeft } from 'react-icons/fa';
 
 const MotionBox = motion(Box);

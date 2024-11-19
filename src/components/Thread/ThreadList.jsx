@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getThreads, joinThread } from '../services/threadService';
+import { getThreads, joinThread } from '../../services/threadService';
 import {
   Box,
   Text,
@@ -29,7 +29,7 @@ import {
   FiCheckCircle,
   FiAlertCircle,
 } from 'react-icons/fi';
-import { auth } from '../config/firebase';
+import { auth } from '../../config/firebase';
 import PropTypes from 'prop-types';
 
 const MotionBox = motion(Box);
