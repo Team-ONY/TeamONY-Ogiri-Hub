@@ -10,6 +10,7 @@ import {
   Avatar,
   Icon,
   IconButton,
+  Spinner,
 } from '@chakra-ui/react';
 import { motion } from 'framer-motion';
 import { auth } from '../../config/firebase';
@@ -20,6 +21,7 @@ import {
 } from '../../services/threadService';
 import { getUserById } from '../../services/userService';
 import { FaCrown, FaTrash, FaArrowLeft } from 'react-icons/fa';
+import { useAlert } from '../../hooks/useAlert';
 
 const MotionBox = motion(Box);
 const MotionInput = motion(Input);
@@ -35,9 +37,12 @@ function ThreadDetail() {
   const navigate = useNavigate();
   const [threadCreator, setThreadCreator] = useState(null);
   const commentsEndRef = useRef(null);
+  const { showAlert } = useAlert();
+  const [loading, setLoading] = useState(true);
+  const currentUser = auth.currentUser;
 
   useEffect(() => {
-    // userが変更されたら再レンダリング
+    // 1. Auth state effect
     const unsubscribe = auth.onAuthStateChanged((user) => {
       setUser(user);
       setIsLoadingUser(false); // ユーザー情報読み込み完了
@@ -45,6 +50,47 @@ function ThreadDetail() {
     return () => unsubscribe();
   }, []);
 
+  // 2. Thread access check effect
+  useEffect(() => {
+    const checkThreadAccess = async () => {
+      if (!currentUser) {
+        showAlert('ログインが必要です。', 'error');
+        navigate('/signin');
+        return;
+      }
+
+      try {
+        const threadData = await getThreadById(id);
+
+        if (!threadData) {
+          showAlert('スレッドが見つかりませんでした。', 'error');
+          navigate('/thread');
+          return;
+        }
+
+        const isParticipant = threadData.participants?.includes(
+          currentUser?.uid
+        );
+
+        if (!isParticipant) {
+          showAlert('このスレッドに参加する必要があります。', 'warning');
+          navigate('/thread');
+          return;
+        }
+
+        setThread(threadData);
+        setLoading(false);
+      } catch (error) {
+        console.error('Error fetching thread:', error);
+        showAlert('スレッドの読み込み中にエラーが発生しました。', 'error');
+        navigate('/thread');
+      }
+    };
+
+    checkThreadAccess();
+  }, [id, currentUser, navigate, showAlert]);
+
+  // 3. Thread details fetch effect
   useEffect(() => {
     const fetchThread = async () => {
       const threadData = await getThreadById(id);
@@ -62,16 +108,22 @@ function ThreadDetail() {
           })
         );
 
-        // スレッド作成者の情報も取得
         const creatorData = await getUserById(threadData.createdBy);
         setThreadCreator(creatorData);
-
         setThread({ ...threadData, comments: commentsWithUsernames });
       }
     };
     fetchThread();
   }, [id]);
 
+  // 4. Scroll effect
+  useEffect(() => {
+    if (thread && thread.comments) {
+      scrollToBottom();
+    }
+  }, [thread]);
+
+  // 5. Comment add effect
   useEffect(() => {
     const fetchThreadDetails = async () => {
       const threadData = await getThreadById(id);
@@ -139,18 +191,8 @@ function ThreadDetail() {
 
   // コメントが追加されたら最下部までスクrーる
   const scrollToBottom = () => {
-    commentsEndRef.curret?.scrollToBottom({ behavior: 'smooth' });
+    commentsEndRef.current?.scrollToBottom({ behavior: 'smooth' });
   };
-
-  useEffect(() => {
-    if (thread && thread.comments) {
-      scrollToBottom();
-    }
-  }, [thread]);
-
-  if (!thread || !thread.comments) {
-    return <div>Loading...</div>;
-  }
 
   const handleDeleteComment = async (comment) => {
     try {
@@ -167,6 +209,29 @@ function ThreadDetail() {
       setError('コメントの削除に失敗しました');
     }
   };
+
+  if (loading || isLoadingUser) {
+    return (
+      <Flex
+        justify="center"
+        align="center"
+        height="100vh" // 画面全体の高さを占める
+      >
+        <Spinner size="xl" color="pink.400" />
+      </Flex>
+    );
+  }
+
+  // スレッドやコメントが存在しない場合の表示
+  if (!thread || !thread.comments) {
+    return (
+      <VStack spacing={6} align="stretch" mt={20} pb={20}>
+        <Text color="white" textAlign="center">
+          スレッドが見つかりませんでした。
+        </Text>
+      </VStack>
+    );
+  }
 
   return (
     <VStack spacing={6} align="stretch" mt={20} pb={20}>
