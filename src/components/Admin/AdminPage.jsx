@@ -1,13 +1,15 @@
 import { useParams } from 'react-router-dom';
 import { useEffect, useState } from 'react';
-import { getThreadById } from '../services/threadService';
-import { auth } from '../config/firebase';
+import { getThreadById } from '../../services/threadService';
+import { auth } from '../../config/firebase';
+import { useAlert } from '../../hooks/useAlert';
 
 function AdminPage() {
   const { id } = useParams();
   const [thread, setThread] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const { showAlert } = useAlert();
 
   useEffect(() => {
     const fetchThread = async () => {
@@ -38,7 +40,8 @@ function AdminPage() {
   }
 
   if (auth.currentUser.uid !== thread.createdBy) {
-    return <div>You are not the admin of this thread</div>;
+    showAlert('このスレッドの管理者権限がありません');
+    return <div>権限がありません</div>;
   }
 
   return (
