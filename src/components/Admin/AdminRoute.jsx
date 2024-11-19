@@ -37,7 +37,7 @@ export const AdminRoute = ({ children }) => {
     };
 
     checkThreadAdmin();
-  }, [currentUser, threadId]);
+  }, [currentUser, threadId, showAlert]);
 
   if (loading) {
     return null;
