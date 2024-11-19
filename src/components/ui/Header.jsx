@@ -18,7 +18,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import ProfileIcon from '../../Icons/ProfileIcon';
 import ThreadIcon from '../../Icons/TheadIcon';
 import HomeIcon from '../../Icons/HomeIcon';
-import LogoutIcon from '../../Icons/LogoutIcon'; // LogoutIconを正しくインポート
+import LogoutIcon from '../../Icons/LogoutIcon';
+import { useAuth } from '../../hooks/useAuth';
 
 const MotionFlex = motion(Flex);
 
@@ -26,6 +27,7 @@ function Header() {
   const [isOpen, setIsOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
+  const { logout } = useAuth();
 
   const toggleDrawer = () => {
     setIsOpen(!isOpen);
@@ -47,6 +49,14 @@ function Header() {
   ];
 
   const isActivePath = (path) => location.pathname === path;
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+    } catch (error) {
+      console.error('ログアウトエラー:', error);
+    }
+  };
 
   return (
     <Box
@@ -184,7 +194,7 @@ function Header() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 20 }}
-              onClick={() => handleNavigation('/logout')}
+              onClick={handleLogout}
               align="center"
               p={4}
               mb={6}

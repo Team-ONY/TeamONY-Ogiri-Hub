@@ -17,7 +17,7 @@ import {
 } from '@chakra-ui/react';
 import { motion } from 'framer-motion';
 import { FaFire, FaUsers, FaChartLine, FaRegBookmark } from 'react-icons/fa';
-import ThreadList from './ThreadList';
+import ThreadList from '../Thread/ThreadList';
 
 const MotionBox = motion(Box);
 const MotionFlex = motion(Flex);

@@ -13,7 +13,7 @@ import {
   Icon,
   IconButton,
 } from '@chakra-ui/react';
-import { createThread } from '../services/threadService';
+import { createThread } from '../../services/threadService';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import {

@@ -19,4 +19,11 @@ export const theme = extendTheme({
     initializeAnalytics: 'dark',
     useSystemColorMode: false,
   },
+  components: {
+    Input: {
+      defaultProps: {
+        focusBorderColor: 'pink.500',
+      },
+    },
+  },
 });
