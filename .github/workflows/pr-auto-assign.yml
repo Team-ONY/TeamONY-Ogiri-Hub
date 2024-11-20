@@ -5,7 +5,8 @@ on:
     types: [opened, reopened]
 
 permissions:
-  issues: write # pull request の assignee を変更するためには issue への書き込み権限が必要
+  pull-requests: write
+  issues: write
 jobs:
   auto-assign:
     runs-on: ubuntu-latest

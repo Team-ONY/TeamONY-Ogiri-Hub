@@ -84,7 +84,7 @@ function CreateThread() {
         borderRadius="3xl"
         bg="linear-gradient(170deg, rgba(18, 18, 18, 0.95) 0%, rgba(30, 30, 30, 0.95) 100%)"
         backdropFilter="blur(20px)"
-        boxShadow="0 20px 40px -10px rgba(0, 0, 0, 0.3)"
+        boxShadow="0 8px 32px 0 rgba(236, 72, 153, 0.37), 0 8px 32px 0 rgba(128, 90, 213, 0.37)"
         border="1px solid"
         borderColor="whiteAlpha.100"
         initial={{ opacity: 0, y: 20 }}
