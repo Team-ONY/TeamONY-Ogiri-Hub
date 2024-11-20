@@ -172,11 +172,12 @@ function ThreadDetail() {
             };
           })
         );
-
         setThread({
           ...threadData,
           comments: commentsWithUserInfo,
         });
+        // コメントが追加されたら最下部までスクロール
+        scrollToBottom();
       }
     } catch (error) {
       // コメントの投稿に失敗したときのエラー処理
@@ -191,7 +192,7 @@ function ThreadDetail() {
 
   // コメントが追加されたら最下部までスクrーる
   const scrollToBottom = () => {
-    commentsEndRef.current?.scrollToBottom({ behavior: 'smooth' });
+    commentsEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
   const handleDeleteComment = async (comment) => {
@@ -420,7 +421,7 @@ function ThreadDetail() {
         ))}
 
         {/* コメント追加後にスクロール */}
-        <div ref={commentsEndRef} />
+        <Box ref={commentsEndRef} />
 
         <MotionBox
           p={5}
