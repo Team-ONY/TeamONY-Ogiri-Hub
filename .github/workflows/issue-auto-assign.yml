@@ -4,6 +4,9 @@ on:
   issues:
     types: [opened, reopened]
 
+permissions:
+  issues: write # issue への書き込み権限を付与
+
 jobs:
   auto-assign:
     runs-on: ubuntu-latest

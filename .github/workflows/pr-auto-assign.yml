@@ -1,9 +1,11 @@
 name: Auto-assign on pull request
 
 on:
-  pull_request_target:
+  pull_request:
     types: [opened, reopened]
 
+permissions:
+  issues: write # pull request の assignee を変更するためには issue への書き込み権限が必要
 jobs:
   auto-assign:
     runs-on: ubuntu-latest
