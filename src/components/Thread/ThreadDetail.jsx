@@ -34,11 +34,11 @@ function ThreadDetail() {
   const [error, setError] = useState('');
   const [user, setUser] = useState(auth.currentUser);
   const [isLoadingUser, setIsLoadingUser] = useState(true);
+  const [loadingThread, setLoadingThread] = useState(true);
   const navigate = useNavigate();
   const [threadCreator, setThreadCreator] = useState(null);
   const commentsEndRef = useRef(null);
   const { showAlert } = useAlert();
-  const [loading, setLoading] = useState(true);
   const currentUser = auth.currentUser;
 
   useEffect(() => {
@@ -53,68 +53,73 @@ function ThreadDetail() {
   // 2. Thread access check effect
   useEffect(() => {
     const checkThreadAccess = async () => {
-      if (!currentUser) {
-        showAlert('ログインが必要です。', 'error');
-        navigate('/signin');
-        return;
-      }
-
-      try {
-        const threadData = await getThreadById(id);
-
-        if (!threadData) {
-          showAlert('スレッドが見つかりませんでした。', 'error');
-          navigate('/thread');
+      if (!isLoadingUser) {
+        if (!currentUser) {
+          showAlert('ログインが必要です。', 'error');
+          navigate('/signin');
           return;
         }
 
-        const isParticipant = threadData.participants?.includes(
-          currentUser?.uid
-        );
+        try {
+          const threadData = await getThreadById(id);
 
-        if (!isParticipant) {
-          showAlert('このスレッドに参加する必要があります。', 'warning');
+          if (!threadData) {
+            showAlert('スレッドが見つかりませんでした。', 'error');
+            navigate('/thread');
+            return;
+          }
+
+          const isParticipant = threadData.participants?.includes(
+            currentUser?.uid
+          );
+
+          if (!isParticipant) {
+            showAlert('このスレッドに参加する必要があります。', 'warning');
+            navigate('/thread');
+            return;
+          }
+
+          setThread(threadData);
+          setLoadingThread(false);
+        } catch (error) {
+          console.error('Error fetching thread:', error);
+          showAlert('スレッドの読み込み中にエラーが発生しました。', 'error');
+          setLoadingThread(false);
           navigate('/thread');
-          return;
         }
-
-        setThread(threadData);
-        setLoading(false);
-      } catch (error) {
-        console.error('Error fetching thread:', error);
-        showAlert('スレッドの読み込み中にエラーが発生しました。', 'error');
-        navigate('/thread');
       }
     };
 
     checkThreadAccess();
-  }, [id, currentUser, navigate, showAlert]);
+  }, [id, currentUser, navigate, showAlert, isLoadingUser]);
 
   // 3. Thread details fetch effect
   useEffect(() => {
     const fetchThread = async () => {
-      const threadData = await getThreadById(id);
-      if (threadData) {
-        // コメントの作成者のユーザー名を取得
-        const commentsWithUsernames = await Promise.all(
-          threadData.comments.map(async (comment) => {
-            const userData = await getUserById(comment.createdBy);
-            return {
-              ...comment,
-              createdByUsername: userData ? userData.username : 'Anonymous',
-              userPhotoURL: userData ? userData.photoURL : null,
-              isAdmin: threadData.createdBy === comment.createdBy, // 管理者判定を追加
-            };
-          })
-        );
+      if (!isLoadingUser && !loadingThread) {
+        const threadData = await getThreadById(id);
+        if (threadData) {
+          // コメントの作成者のユーザー名を取得
+          const commentsWithUsernames = await Promise.all(
+            threadData.comments.map(async (comment) => {
+              const userData = await getUserById(comment.createdBy);
+              return {
+                ...comment,
+                createdByUsername: userData ? userData.username : 'Anonymous',
+                userPhotoURL: userData ? userData.photoURL : null,
+                isAdmin: threadData.createdBy === comment.createdBy, // 管理者判定を追加
+              };
+            })
+          );
 
-        const creatorData = await getUserById(threadData.createdBy);
-        setThreadCreator(creatorData);
-        setThread({ ...threadData, comments: commentsWithUsernames });
+          const creatorData = await getUserById(threadData.createdBy);
+          setThreadCreator(creatorData);
+          setThread({ ...threadData, comments: commentsWithUsernames });
+        }
       }
     };
     fetchThread();
-  }, [id]);
+  }, [id, isLoadingUser, loadingThread, thread]);
 
   // 4. Scroll effect
   useEffect(() => {
@@ -211,7 +216,7 @@ function ThreadDetail() {
     }
   };
 
-  if (loading || isLoadingUser) {
+  if (loadingThread || isLoadingUser) {
     return (
       <Flex
         justify="center"
