@@ -147,6 +147,12 @@ function ThreadDetail() {
       setError('コメントを入力してください');
       return;
     }
+    // URLを含むコメントを拒否する
+  const urlPattern = /https?:\/\/[^\s]+/gi; // URLを検出する正規表現
+    if (urlPattern.test(comment)) {
+      setError('コメントにURLを含めることはできません');
+      return;
+    }
 
     try {
       // 現在のユーザーの情報を取得
