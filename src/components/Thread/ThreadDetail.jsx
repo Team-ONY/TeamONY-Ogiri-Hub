@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useState, useEffect, useRef, memo, useCallback } from 'react';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import {
   Box,
   Text,
@@ -22,10 +22,103 @@ import {
 import { getUserById } from '../../services/userService';
 import { FaCrown, FaTrash, FaArrowLeft } from 'react-icons/fa';
 import { useAlert } from '../../hooks/useAlert';
+import { PropTypes } from 'prop-types';
+import { Timestamp } from 'firebase/firestore';
+import throttle from 'lodash.throttle';
 
 const MotionBox = motion(Box);
 const MotionInput = motion(Input);
 const MotionButton = motion(Button);
+
+const MemoizedCommentItem = memo(
+  ({ comment, isAdmin, onDelete, user, thread, index }) => {
+    return (
+      <MotionBox
+        data-comment-index={index}
+        key={comment.id}
+        p={4}
+        bg="blackAlpha.400"
+        borderRadius="xl"
+        width="100%"
+        style={{ boxSizing: 'border-box' }}
+        mx="auto"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3 }}
+        mb={4}
+      >
+        <Flex
+          align="center"
+          mb={2}
+          justifyContent="space-between"
+          flexWrap="wrap"
+          width="100%"
+          style={{ boxSizing: 'border-box' }}
+        >
+          <Flex align="center" gap={2}>
+            <Avatar
+              name={comment.createdByUsername}
+              src={comment.userPhotoURL}
+              size="sm"
+              mr={2}
+              border={isAdmin ? '2px solid' : 'none'}
+              borderColor="pink.400"
+            />
+            <Flex align="center" gap={2}>
+              <Text color="gray.400" fontSize="sm">
+                {comment.createdByUsername}
+              </Text>
+              {isAdmin && (
+                <Icon
+                  as={FaCrown}
+                  color="pink.400"
+                  w={3}
+                  h={3}
+                  title="スレッド管理者"
+                />
+              )}
+              <Text color="gray.500" fontSize="xs">
+                {new Date(comment.createdAt.toDate()).toLocaleString()}
+              </Text>
+            </Flex>
+          </Flex>
+          {/* 削除ボタン */}
+          {user && user.uid === thread.createdBy && (
+            <IconButton
+              aria-label="Delete comment"
+              icon={<Icon as={FaTrash} />}
+              onClick={onDelete}
+              colorScheme="red"
+              variant="ghost"
+              minWidth="30px"
+            />
+          )}
+        </Flex>
+        <Text color="gray.300" fontSize="md" pl={10}>
+          {comment.text}
+        </Text>
+      </MotionBox>
+    );
+  }
+);
+
+MemoizedCommentItem.displayName = 'MemoizedCommentItem';
+MemoizedCommentItem.propTypes = {
+  comment: PropTypes.shape({
+    id: PropTypes.string,
+    text: PropTypes.string,
+    createdAt: PropTypes.object, // Timestamp型を想定
+    createdBy: PropTypes.string,
+    createdByUsername: PropTypes.string,
+    userPhotoURL: PropTypes.string,
+    isAdmin: PropTypes.bool,
+  }).isRequired,
+  isAdmin: PropTypes.bool,
+  onDelete: PropTypes.func.isRequired,
+  user: PropTypes.object,
+  thread: PropTypes.object,
+  index: PropTypes.number.isRequired,
+};
 
 function ThreadDetail() {
   const { id } = useParams();
@@ -40,9 +133,19 @@ function ThreadDetail() {
   const commentsEndRef = useRef(null);
   const { showAlert } = useAlert();
   const currentUser = auth.currentUser;
+  const [isLoadingComments, setIsLoadingComments] = useState(true);
+  const [displayedComments, setDisplayedComments] = useState([]);
+  const [commentsPerPage] = useState(20);
+  const [hasMoreComments, setHasMoreComments] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [isNewCommentAdded, setIsNewCommentAdded] = useState(false);
+  const [loadedPages, setLoadedPages] = useState(new Set());
+  const [currentViewType, setCurrentViewType] = useState('regular');
+  const location = useLocation();
 
+  // --- useEffect hooks ---
+  // 1. Auth state effect
   useEffect(() => {
-    // 1. Auth state effect
     const unsubscribe = auth.onAuthStateChanged((user) => {
       setUser(user);
       setIsLoadingUser(false); // ユーザー情報読み込み完了
@@ -53,93 +156,173 @@ function ThreadDetail() {
   // 2. Thread access check effect
   useEffect(() => {
     const checkThreadAccess = async () => {
-      if (!isLoadingUser) {
-        if (!currentUser) {
-          showAlert('ログインが必要です。', 'error');
-          navigate('/signin');
+      if (isLoadingUser || !currentUser) {
+        return;
+      }
+
+      try {
+        const threadData = await getThreadById(id);
+        if (!threadData) {
+          showAlert('スレッドが見つかりませんでした。', 'error');
+          navigate('/thread');
           return;
         }
 
-        try {
-          const threadData = await getThreadById(id);
+        const isAdminView = location.pathname.includes('/admin/'); // location.pathname を使用して isAdminView を決定
 
-          if (!threadData) {
-            showAlert('スレッドが見つかりませんでした。', 'error');
-            navigate('/thread');
+        if (isAdminView) {
+          // 管理者ビューの場合
+          if (threadData.createdBy !== currentUser.uid) {
+            showAlert('管理者権限がありません。', 'error');
+            navigate(`/thread/${id}`); // 通常のスレッド詳細ページにリダイレクト
             return;
           }
-
+        } else {
+          // 通常ビューの場合
           const isParticipant = threadData.participants?.includes(
-            currentUser?.uid
+            currentUser.uid
           );
-
-          if (!isParticipant) {
+          if (!isParticipant && !isAdminView) {
+            // isAdminView の場合、参加チェックをスキップ
             showAlert('このスレッドに参加する必要があります。', 'warning');
             navigate('/thread');
             return;
           }
-
-          setThread(threadData);
-          setLoadingThread(false);
-        } catch (error) {
-          console.error('Error fetching thread:', error);
-          showAlert('スレッドの読み込み中にエラーが発生しました。', 'error');
-          setLoadingThread(false);
-          navigate('/thread');
         }
+
+        setThread(threadData);
+        setLoadingThread(false);
+      } catch (error) {
+        console.error('Error in checkThreadAccess:', error);
+        showAlert('スレッドの読み込み中にエラーが発生しました。', 'error');
+        setLoadingThread(false);
+        navigate('/thread');
       }
     };
 
     checkThreadAccess();
-  }, [id, currentUser, navigate, showAlert, isLoadingUser]);
+  }, [id, currentUser, navigate, showAlert, isLoadingUser, location.pathname]);
+
+  useEffect(() => {
+    const path = window.location.pathname;
+    const isAdminPath = path.includes('/admin/');
+    setCurrentViewType(isAdminPath ? 'admin' : 'regular');
+  }, []);
+
+  useEffect(() => {
+    if (location.state?.isAdmin) {
+      setCurrentViewType('admin');
+    }
+  }, [location]);
 
   // 3. Thread details fetch effect
   useEffect(() => {
+    let isMounted = true; // コンポーネントがマウントされているかどうかのフラグ
     const fetchThread = async () => {
-      if (!isLoadingUser && !loadingThread) {
-        const threadData = await getThreadById(id);
-        if (threadData) {
-          // コメントの作成者のユーザー名を取得
-          const commentsWithUsernames = await Promise.all(
-            threadData.comments.map(async (comment) => {
-              const userData = await getUserById(comment.createdBy);
-              return {
-                ...comment,
-                createdByUsername: userData ? userData.username : 'Anonymous',
-                userPhotoURL: userData ? userData.photoURL : null,
-                isAdmin: threadData.createdBy === comment.createdBy, // 管理者判定を追加
-              };
-            })
-          );
+      if (!isLoadingUser && !loadingThread && isMounted) {
+        // isMounted をチェック
+        setIsLoadingComments(true);
+        try {
+          const [threadData, commentsWithUsernames] = await Promise.all([
+            getThreadById(id),
+            getCommentsWithUserInfo(id),
+          ]);
 
-          const creatorData = await getUserById(threadData.createdBy);
-          setThreadCreator(creatorData);
-          setThread({ ...threadData, comments: commentsWithUsernames });
+          if (threadData && isMounted) {
+            // isMounted をチェック
+            const creatorData = await getUserById(threadData.createdBy);
+            setThreadCreator(creatorData);
+
+            // コメントをセットする前にソート
+            const sortedComments = commentsWithUsernames.sort(
+              (a, b) =>
+                a.createdAt.toDate().getTime() - b.createdAt.toDate().getTime()
+            );
+
+            setThread({ ...threadData, comments: sortedComments }); // スレッドデータにコメントを追加
+          }
+        } catch (error) {
+          console.error('Error fetching thread:', error);
+          showAlert('スレッドの読み込み中にエラーが発生しました。', 'error');
+        } finally {
+          if (isMounted) {
+            // isMounted をチェック
+            setIsLoadingComments(false);
+          }
         }
       }
     };
-    fetchThread();
-  }, [id, isLoadingUser, loadingThread, thread]);
 
-  // 4. Scroll effect
+    fetchThread();
+
+    return () => {
+      isMounted = false; // クリーンアップ関数でフラグをfalseにする
+    };
+  }, [id, isLoadingUser, loadingThread, showAlert]);
+
+  const scrollToBottom = useCallback(() => {
+    if (commentsEndRef.current && isNewCommentAdded) {
+      commentsEndRef.current.scrollIntoView({ behavior: 'smooth' });
+      setIsNewCommentAdded(false);
+    }
+  }, [isNewCommentAdded]);
+
+  // 4. Scroll bottom effect
   useEffect(() => {
     if (thread && thread.comments) {
       scrollToBottom();
     }
-  }, [thread]);
+  }, [thread, scrollToBottom]);
 
-  // 5. Comment add effect
+  // 5. Initial comments load effect
   useEffect(() => {
-    const fetchThreadDetails = async () => {
-      const threadData = await getThreadById(id);
-      if (threadData) {
-        const creatorData = await getUserById(threadData.createdBy);
-        setThreadCreator(creatorData);
-        setThread(threadData);
-      }
-    };
-    fetchThreadDetails();
-  }, [id]);
+    if (thread?.comments?.length > 0) {
+      const initialComments = thread.comments
+        .slice(0, commentsPerPage)
+        .map((comment) => ({
+          ...comment,
+          uniqueKey: `${comment.id}-initial`,
+        }));
+
+      setDisplayedComments(initialComments);
+      setHasMoreComments(thread.comments.length > commentsPerPage);
+      setLoadedPages(new Set([0]));
+      setCurrentPage(1);
+      setIsNewCommentAdded(false);
+
+      console.log('Initial comments loaded:', initialComments.length);
+    }
+  }, [thread?.comments, commentsPerPage]); // thread?.comments を依存配列に追加
+
+  const updateHasMoreComments = useCallback(() => {
+    if (thread && thread.comments) {
+      setHasMoreComments(displayedComments.length < thread.comments.length);
+    }
+  }, [thread, displayedComments.length]);
+
+  // 6. Update hasMoreComments effect
+  useEffect(() => {
+    updateHasMoreComments();
+  }, [displayedComments, updateHasMoreComments]);
+
+  // --- functions ---
+  // コメントのユーザー情報を取得する関数を分離
+  const getCommentsWithUserInfo = async (threadId) => {
+    const threadData = await getThreadById(threadId);
+    if (!threadData) return []; // スレッドデータがない場合の処理を追加
+
+    return Promise.all(
+      threadData.comments.map(async (comment) => {
+        const userData = await getUserById(comment.createdBy);
+        return {
+          ...comment,
+          createdByUsername: userData?.username || 'Anonymous',
+          userPhotoURL: userData?.photoURL || null,
+          isAdmin: threadData.createdBy === comment.createdBy,
+        };
+      })
+    );
+  };
 
   const handleAddComment = async () => {
     // 空白だけのコメントを投稿できないようにする
@@ -148,63 +331,65 @@ function ThreadDetail() {
       return;
     }
     // URLを含むコメントを拒否する
-  const urlPattern = /https?:\/\/[^\s]+/gi; // URLを検出する正規表現
+    const urlPattern = /https?:\/\/[^\s]+/gi; // URLを検出する正規表現
     if (urlPattern.test(comment)) {
       setError('コメントにURLを含めることはできません');
       return;
     }
 
     try {
-      // 現在のユーザーの情報を取得
-      const currentUser = auth.currentUser;
-      const userId = currentUser ? currentUser.uid : 'anonymous';
-      const displayName = currentUser
-        ? currentUser.displayName
-        : 'Anonymous User';
-      const photoURL = currentUser ? currentUser.photoURL : null;
+      const { uid: userId, displayName, photoURL } = auth.currentUser;
+      const createdAt = Timestamp.now();
+      const newComment = {
+        id: createdAt.toMillis().toString(),
+        text: comment,
+        createdAt,
+        createdBy: userId,
+        createdByUsername: displayName,
+        userPhotoURL: photoURL,
+        isAdmin: thread.createdBy === userId,
+        uniqueKey: `${createdAt.toMillis().toString()}-new`, // uniqueKeyを追加
+      };
 
-      // スレッドに新しいコメントを追加
       await addCommentToThread(id, comment, userId, displayName, photoURL);
 
-      // 新しいコメントの投稿に成功したら、入力欄をクリア
       setComment('');
-
-      // コメント追加後にスレッドデータを再取得
-      const threadData = await getThreadById(id);
-      if (threadData) {
-        const commentsWithUserInfo = await Promise.all(
-          threadData.comments.map(async (comment) => {
-            const userData = await getUserById(comment.createdBy);
-            return {
-              ...comment,
-              createdByUsername: userData?.username || 'Anonymous',
-              userPhotoURL: userData?.photoURL || null,
-              isAdmin: threadData.createdBy === comment.createdBy,
-            };
-          })
+      setDisplayedComments((prev) => {
+        const updated = [...prev, newComment];
+        return updated.sort(
+          (a, b) =>
+            a.createdAt.toDate().getTime() - b.createdAt.toDate().getTime()
         );
-        setThread({
-          ...threadData,
-          comments: commentsWithUserInfo,
-        });
-        // コメントが追加されたら最下部までスクロール
-        scrollToBottom();
-      }
+      });
+      setIsNewCommentAdded(true); // 新しいコメントが追加されたことを示す状態を更新
+      scrollToBottom(); // コメント追加後にスクロール
+
+      // コメント追加後にhasMoreCommentsを更新
+      updateHasMoreComments();
     } catch (error) {
-      // コメントの投稿に失敗したときのエラー処理
       console.error('Error adding comment:', error);
       setError('コメントの追加に失敗しました');
     }
   };
 
   const handleGoToAdminPage = () => {
-    navigate(`/admin/${id}`);
+    if (!thread || !currentUser) {
+      return;
+    }
+
+    if (thread.createdBy !== currentUser.uid) {
+      showAlert('管理者権限がありません。', 'error');
+      return;
+    }
+
+    navigate(`/admin/${id}`); // admin/ を追加
   };
 
-  // コメントが追加されたら最下部までスクrーる
-  const scrollToBottom = () => {
-    commentsEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
+  useEffect(() => {
+    if (thread?.comments && isNewCommentAdded) {
+      scrollToBottom();
+    }
+  }, [thread?.comments, isNewCommentAdded, scrollToBottom]);
 
   const handleDeleteComment = async (comment) => {
     try {
@@ -221,7 +406,100 @@ function ThreadDetail() {
       setError('コメントの削除に失敗しました');
     }
   };
+  // コメントのページネーション処理を関数として定義
+  const loadMoreComments = useCallback(() => {
+    if (!thread || !thread.comments) return;
 
+    const startIndex = currentPage * commentsPerPage;
+    const endIndex = startIndex + commentsPerPage;
+    const pageNumber = Math.floor(startIndex / commentsPerPage);
+
+    // すでに読み込んだページはスキップ
+    if (loadedPages.has(pageNumber)) return;
+
+    console.log(`Loading comments from ${startIndex} to ${endIndex}`);
+
+    const nextBatch = thread.comments
+      .slice(startIndex, endIndex)
+      .map((comment) => ({
+        ...comment,
+        uniqueKey: `${comment.id}-${startIndex}`,
+      }));
+
+    if (nextBatch.length === 0) {
+      setHasMoreComments(false);
+      return;
+    }
+
+    setDisplayedComments((prev) => {
+      const existingIds = new Set(prev.map((comment) => comment.id));
+      const newComments = nextBatch.filter(
+        (comment) => !existingIds.has(comment.id)
+      );
+
+      const allComments = [...prev, ...newComments];
+
+      return allComments.sort(
+        (a, b) =>
+          a.createdAt.toDate().getTime() - b.createdAt.toDate().getTime()
+      );
+    });
+
+    setCurrentPage((prev) => prev + 1);
+    setLoadedPages((prev) => new Set([...prev, pageNumber]));
+  }, [thread, currentPage, commentsPerPage, loadedPages]);
+
+  // --- Custom Hooks ---
+  // スクロール監視のカスタムフック
+  const useInfiniteScroll = (callback) => {
+    const scrollCallback = useCallback(
+      throttle(() => {
+        if (!hasMoreComments) return;
+
+        // 表示されているコメントの最後の要素を取得
+        const lastComment = document.querySelector(
+          `[data-comment-index="${displayedComments.length - 1}"]`
+        );
+
+        if (!lastComment) return;
+
+        // 最後のコメントの位置を取得
+        const lastCommentPosition = lastComment.getBoundingClientRect();
+        const isLastCommentVisible =
+          lastCommentPosition.bottom <= window.innerHeight;
+
+        if (isLastCommentVisible) {
+          callback();
+        }
+      }, 200),
+      [callback, hasMoreComments, displayedComments.length]
+    );
+
+    useEffect(() => {
+      window.addEventListener('scroll', scrollCallback);
+      return () => {
+        scrollCallback.cancel();
+        window.removeEventListener('scroll', scrollCallback);
+      };
+    }, [scrollCallback]);
+  };
+
+  // --- useInfiniteScroll の呼び出し ---
+  useInfiniteScroll(loadMoreComments);
+
+  // --- デバッグ用：コメントの状態をログ出力 (useEffect) ---
+  useEffect(() => {
+    // デバッグ用なので最後に配置
+    console.log('コメント読み込み状態:', {
+      表示中のコメント数: displayedComments.length,
+      総コメント数: thread?.comments?.length,
+      現在のページ: currentPage,
+      さらなるコメントの有無: hasMoreComments,
+      読み込み済みページ: Array.from(loadedPages),
+    });
+  }, [displayedComments, thread, currentPage, hasMoreComments, loadedPages]);
+
+  // --- Loading indicators and return statement ---
   if (loadingThread || isLoadingUser) {
     return (
       <Flex
@@ -234,7 +512,6 @@ function ThreadDetail() {
     );
   }
 
-  // スレッドやコメントが存在しない場合の表示
   if (!thread || !thread.comments) {
     return (
       <VStack spacing={6} align="stretch" mt={20} pb={20}>
@@ -275,7 +552,7 @@ function ThreadDetail() {
         </MotionBox>
         <MotionBox
           p={6}
-          bg="blackAlpha.500"
+          bg={currentViewType === 'admin' ? 'blackAlpha.600' : 'blackAlpha.500'}
           borderRadius="2xl"
           boxShadow="0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)"
           initial={{ opacity: 0, y: 20 }}
@@ -366,71 +643,43 @@ function ThreadDetail() {
             </VStack>
           </Flex>
 
-          {thread.comments.map((comment, index) => (
-            <MotionBox
-              key={index}
-              p={4}
-              bg="blackAlpha.400"
-              borderRadius="xl"
-              width="100%"
-              style={{ boxSizing: 'border-box' }}
-              mx="auto"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.1, duration: 0.3 }}
-              mb={4}
-            >
-              <Flex
-                align="center"
-                mb={2}
-                justifyContent="space-between"
-                flexWrap="wrap"
-                width="100%"
-                style={{ boxSizing: 'border-box' }}
-              >
-                <Flex align="center" gap={2}>
-                  <Avatar
-                    name={comment.createdByUsername}
-                    src={comment.userPhotoURL}
-                    size="sm"
-                    mr={2}
-                    border={comment.isAdmin ? '2px solid' : 'none'}
-                    borderColor="pink.400"
-                  />
-                  <Flex align="center" gap={2}>
-                    <Text color="gray.400" fontSize="sm">
-                      {comment.createdByUsername}
-                    </Text>
-                    {comment.isAdmin && (
-                      <Icon
-                        as={FaCrown}
-                        color="pink.400"
-                        w={3}
-                        h={3}
-                        title="スレッド管理者"
-                      />
-                    )}
-                    <Text color="gray.500" fontSize="xs">
-                      {new Date(comment.createdAt.toDate()).toLocaleString()}
-                    </Text>
-                  </Flex>
-                </Flex>
-                {user && user.uid === thread.createdBy && (
-                  <IconButton
-                    aria-label="Delete comment"
-                    icon={<Icon as={FaTrash} />}
-                    onClick={() => handleDeleteComment(comment)}
-                    colorScheme="red"
-                    variant="ghost"
-                    minWidth="30px"
-                  />
-                )}
+          {/* コメントセクション */}
+          {/* コメントセクション */}
+          <VStack spacing={4} align="stretch" mt={6}>
+            {isLoadingComments && displayedComments.length === 0 ? (
+              // 初期ローディング（コメントが1つも読み込まれていない場合）
+              <Flex justify="center" py={8}>
+                <Spinner size="lg" color="pink.400" />
               </Flex>
-              <Text color="gray.300" fontSize="md" pl={10}>
-                {comment.text}
+            ) : displayedComments.length > 0 ? (
+              // コメントの表示
+              <>
+                {displayedComments.map((comment, index) => (
+                  <MemoizedCommentItem
+                    key={comment.uniqueKey || comment.id}
+                    comment={comment}
+                    isAdmin={comment.isAdmin}
+                    onDelete={() => handleDeleteComment(comment)}
+                    user={user}
+                    thread={thread}
+                    index={index}
+                  />
+                ))}
+
+                {/* 追加コメントの読み込みインジケーター */}
+                {hasMoreComments && (
+                  <Flex justify="center" my={4}>
+                    <Spinner size="sm" color="pink.400" />
+                  </Flex>
+                )}
+              </>
+            ) : (
+              // コメントが1つもない場合
+              <Text color="gray.400" textAlign="center" py={8}>
+                コメントはまだありません
               </Text>
-            </MotionBox>
-          ))}
+            )}
+          </VStack>
 
           {/* コメント追加後にスクロール */}
           <Box ref={commentsEndRef} />
