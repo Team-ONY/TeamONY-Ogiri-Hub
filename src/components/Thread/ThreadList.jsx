@@ -156,6 +156,7 @@ function ThreadList({ searchTerm, sortBy, layout }) {
                           bgGradient="linear(to-r, pink.400, purple.400)"
                           bgClip="text"
                           letterSpacing="tight"
+                          textShadow="0 0 20px rgba(236, 72, 153, 0.3)"
                         >
                           {thread.title}
                         </Text>
@@ -317,6 +318,7 @@ function ThreadList({ searchTerm, sortBy, layout }) {
                         bgClip="text"
                         letterSpacing="tight"
                         lineHeight="1.2"
+                        textShadow="0 0 20px rgba(236, 72, 153, 0.3)"
                       >
                         {thread.title}
                       </Text>

@@ -10,12 +10,13 @@ export const AdminRoute = ({ children }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const { showAlert } = useAlert();
-  const [isAdmin, setIsAdmin] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(null);
   const threadId = location.pathname.split('/')[2];
 
   useEffect(() => {
     const checkThreadAdmin = async () => {
       if (!currentUser) {
+        setIsAdmin(false);
         return;
       }
 
@@ -27,15 +28,21 @@ export const AdminRoute = ({ children }) => {
         } else {
           showAlert('このスレッドの管理者権限がありません');
           navigate(`/thread/${threadId}`);
+          setIsAdmin(false);
         }
       } catch (error) {
         console.error('スレッド管理者チェックエラー:', error);
         showAlert('権限の確認中にエラーが発生しました。');
+        setIsAdmin(false);
       }
     };
 
     checkThreadAdmin();
   }, [currentUser, threadId, showAlert, navigate]);
+
+  if (isAdmin === null) {
+    return <div>Loading...</div>;
+  }
 
   if (!currentUser || !isAdmin) {
     return <Navigate to={`/thread/${threadId}`} replace />;

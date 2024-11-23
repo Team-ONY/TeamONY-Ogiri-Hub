@@ -130,6 +130,7 @@ function Home() {
                   size="lg"
                   bgGradient="linear(to-r, pink.400, purple.400)"
                   bgClip="text"
+                  textShadow="0 0 20px rgba(236, 72, 153, 0.3)"
                 >
                   Welcome to OgiriHub 🎉
                 </Heading>
@@ -184,14 +185,14 @@ function Home() {
             transition={{ duration: 0.5, delay: 0.3 }}
           >
             {/* トレンドセクション */}
-            <Box
-              bg="blackAlpha.500"
-              borderRadius="xl"
-              p={6}
-              mb={6}
-              backdropFilter="blur(10px)"
-            >
-              <Heading size="md" color="white" mb={4}>
+            <Box bg="blackAlpha.500" borderRadius="xl" p={6} mb={6}>
+              <Heading
+                size="md"
+                mb={4}
+                bgGradient="linear(to-r, pink.400, purple.400)"
+                bgClip="text"
+                textShadow="0 0 20px rgba(236, 72, 153, 0.3)"
+              >
                 トレンド
               </Heading>
               <VStack spacing={3} align="stretch">
