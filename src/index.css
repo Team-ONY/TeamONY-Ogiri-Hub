@@ -37,7 +37,6 @@
   color-scheme: dark;
   color: var(--text-primary);
 
-  /* テキストレンダリングの最適化 */
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
@@ -66,7 +65,6 @@ body {
   font-family: 'Circular Std', sans-serif;
   background-attachment: fixed;
 
-  /* 洗練された背景アニメーション */
   background-size: 200% 200%;
   animation: gradientMove 15s ease infinite;
 }
@@ -75,11 +73,9 @@ body {
   min-height: 100vh;
   color: var(--text-primary);
 
-  /* より深みのある視覚効果 */
   position: relative;
 }
 
-/* 微かな光沢効果 */
 body::after {
   content: '';
   position: fixed;
@@ -113,7 +109,6 @@ body::after {
   }
 }
 
-/* スクロールバーのカスタマイズ */
 ::-webkit-scrollbar {
   width: 8px;
 }
