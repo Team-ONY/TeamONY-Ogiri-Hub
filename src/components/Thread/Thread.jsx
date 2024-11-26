@@ -53,7 +53,7 @@ function Thread() {
   };
 
   return (
-    <Box minH="100vh" bg={bgGradient} pt={24} px={4}>
+    <Box minH="100vh" bg={bgGradient} pt={32} px={4}>
       <MotionBox
         maxW="1200px"
         mx="auto"
