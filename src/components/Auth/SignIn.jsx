@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../../config/firebase';
 import {
@@ -20,12 +20,79 @@ import { translateFirebaseError } from '../../utils/translateError';
 import { Link as RouterLink } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
+import PropTypes from 'prop-types';
 
-const gradientAnimation = keyframes`
- 0% { background-position: 0% 50% }
- 50% { background-position: 100% 50% }
- 100% { background-position: 0% 50% }
+const glowAnimation = keyframes`
+  0% { box-shadow: -5px 0 15px rgba(255, 20, 147, 0.7), 5px 0 15px rgba(138, 43, 226, 0.7); }
+  50% { box-shadow: -10px 0 20px rgba(255, 20, 147, 0.9), 10px 0 20px rgba(138, 43, 226, 0.9); }
+  100% { box-shadow: -5px 0 15px rgba(255, 20, 147, 0.7), 5px 0 15px rgba(138, 43, 226, 0.7); }
 `;
+
+const AnimatedEmoji = ({ delay }) => {
+  const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
+  const containerRef = useRef(null);
+
+  useEffect(() => {
+    const updateSize = () => {
+      if (containerRef.current) {
+        setContainerSize({
+          width: containerRef.current.offsetWidth,
+          height: containerRef.current.offsetHeight,
+        });
+      }
+    };
+
+    updateSize();
+    // リサイズ時にもサイズを更新
+    window.addEventListener('resize', updateSize);
+    return () => window.removeEventListener('resize', updateSize);
+  }, []);
+
+  const randomPosition = () => ({
+    x: Math.random() * (containerSize.width - 50), // 絵文字のサイズを考慮
+    y: Math.random() * (containerSize.height - 50), // 絵文字のサイズを考慮
+    rotate: Math.random() * 360,
+  });
+
+  return (
+    <Box
+      ref={containerRef}
+      position="absolute"
+      top={0}
+      left={0}
+      right={0}
+      bottom={0}
+      overflow="hidden"
+    >
+      <motion.div
+        initial={{ opacity: 0, scale: 0, ...randomPosition() }}
+        animate={{
+          opacity: [0, 1, 1, 0],
+          scale: [0, 1, 1, 0],
+          ...randomPosition(),
+        }}
+        transition={{
+          duration: 4,
+          times: [0, 0.2, 0.8, 1],
+          repeat: Infinity,
+          delay,
+        }}
+        style={{
+          position: 'absolute',
+          width: 'fit-content',
+          height: 'fit-content',
+        }}
+      >
+        <Text fontSize="4xl" fontFamily="emoji">
+          🤣
+        </Text>
+      </motion.div>
+    </Box>
+  );
+};
+AnimatedEmoji.propTypes = {
+  delay: PropTypes.number.isRequired,
+};
 
 function SignIn() {
   const [email, setEmail] = useState('');
@@ -40,8 +107,7 @@ function SignIn() {
         email,
         password
       );
-      const user = userCredential.user;
-      console.log(`サインイン成功: ${user.uid}`);
+      console.log(`サインイン成功: ${userCredential.user.uid}`);
       navigate('/home');
     } catch (err) {
       setError(translateFirebaseError(err.code));
@@ -49,205 +115,281 @@ function SignIn() {
   };
 
   return (
-    <Container maxW="lg" centerContent>
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-      >
-        <Box
-          w="500px"
-          p={8}
-          mt={20}
-          borderRadius="xl"
-          bg="blackAlpha.400"
-          backdropFilter="blur(10px)"
-          as={motion.div}
-          whileHover={{ scale: 1.02 }}
-          transition={{ duration: 0.2 }}
+    <Box
+      minH="100vh"
+      w="100%"
+      m={0}
+      p={0}
+      bg="#0a0a0a"
+      display="flex"
+      alignItems="center"
+      justifyContent="center"
+      position="relative"
+      overflow="hidden"
+    >
+      <Box
+        position="absolute"
+        top="0"
+        right="0"
+        width="50%"
+        height="100%"
+        bg="linear-gradient(135deg, #8A2BE2 0%, #FF1493 100%)"
+        opacity="0.1"
+        filter="blur(100px)"
+        transform="skewX(-12deg)"
+      />
+      <Box
+        position="absolute"
+        top="20%"
+        left="10%"
+        width="300px"
+        height="300px"
+        borderRadius="full"
+        bg="linear-gradient(45deg, #8A2BE2 0%, transparent 60%)"
+        opacity="0.1"
+        filter="blur(50px)"
+      />
+
+      <Container maxW="6xl" position="relative">
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.8 }}
         >
-          <VStack spacing={6}>
-            <motion.div
-              initial={{ opacity: 0, y: -20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2, duration: 0.5 }}
+          <Box display="flex" gap={8} position="relative">
+            <Box
+              w="40%"
+              h="600px"
+              position="relative"
+              display={{ base: 'none', lg: 'block' }}
             >
-              <Heading size="xl" color="white" mb={6}>
-                Sign In
-              </Heading>
-            </motion.div>
-
-            <motion.div
-              initial={{ opacity: 0, x: -50 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.3, duration: 0.5 }}
-            >
-              <FormControl>
-                <InputGroup>
-                  <InputLeftElement pointerEvents="none" mt={1}>
-                    <EmailIcon color="gray.400" />
-                  </InputLeftElement>
-                  <Input
-                    w="400px"
-                    placeholder="Email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    bg="gray.800"
-                    border="none"
-                    color="white"
-                    _placeholder={{ color: 'gray.400' }}
-                    _hover={{ bg: 'gray.700' }}
-                    _focus={{
-                      bg: 'gray.700',
-                      borderColor: 'pink.400',
-                      boxShadow: '0 0 0 1px #FF1988',
-                    }}
-                    size="lg"
-                    borderRadius="full"
-                  />
-                </InputGroup>
-              </FormControl>
-            </motion.div>
-
-            <motion.div
-              initial={{ opacity: 0, x: -50 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.4, duration: 0.5 }}
-            >
-              <FormControl>
-                <InputGroup>
-                  <InputLeftElement pointerEvents="none" mt={1}>
-                    <LockIcon color="gray.400" />
-                  </InputLeftElement>
-                  <Input
-                    w="400px"
-                    placeholder="Password"
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    bg="gray.800"
-                    border="none"
-                    color="white"
-                    _placeholder={{ color: 'gray.400' }}
-                    _hover={{ bg: 'gray.700' }}
-                    _focus={{
-                      bg: 'gray.700',
-                      borderColor: 'pink.400',
-                      boxShadow: '0 0 0 1px #FF1988',
-                    }}
-                    size="lg"
-                    borderRadius="full"
-                  />
-                </InputGroup>
-              </FormControl>
-            </motion.div>
-
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.5, duration: 0.5 }}
-            >
-              <Button
-                w="300px"
-                bg="#FF1988"
-                color="white"
-                size="lg"
-                _hover={{
-                  bg: '#FF339D',
-                  transform: 'scale(1.02)',
-                }}
-                _active={{
-                  bg: '#E6006E',
-                }}
-                borderRadius="full"
-                onClick={handleSignIn}
-                transition="all 0.2s"
-                as={motion.button}
-                whileTap={{ scale: 0.95 }}
-                sx={{
-                  background:
-                    'linear-gradient(45deg, #FF1988, #FF339D, #E6006E)',
-                  backgroundSize: '200% 200%',
-                  animation: `${gradientAnimation} 10s ease infinite`,
-                }}
+              <Box
+                position="absolute"
+                top="50%"
+                left="0"
+                transform="translateY(-50%)"
+                w="100%"
+                h="80%"
+                bg="linear-gradient(135deg, rgba(138, 43, 226, 0.2), rgba(255, 20, 147, 0.2))"
+                borderRadius="30px"
+                backdropFilter="blur(20px)"
+                border="1px solid rgba(255, 255, 255, 0.1)"
+                overflow="hidden"
               >
-                Sign In
-              </Button>
-            </motion.div>
+                <Box
+                  position="absolute"
+                  top="0"
+                  left="0"
+                  w="3px"
+                  h="100%"
+                  bg="linear-gradient(to bottom, #8A2BE2, #FF1493)"
+                />
 
-            {error && (
+                <VStack h="100%" justify="center" spacing={8} p={10}>
+                  <VStack spacing={2} align="start" w="100%">
+                    <Text color="white" fontSize="xl" fontWeight="600">
+                      Welcome to
+                    </Text>
+                    <Heading
+                      color="white"
+                      fontSize="6xl"
+                      fontWeight="bold"
+                      lineHeight="1.1"
+                      textAlign="left"
+                      w="100%"
+                    >
+                      Ogiri
+                      <Text
+                        bgGradient="linear(to-r, #8A2BE2, #FF1493)"
+                        bgClip="text"
+                        display="inline"
+                      >
+                        Hub
+                      </Text>
+                    </Heading>
+                  </VStack>
+
+                  <Text
+                    color="whiteAlpha.800"
+                    fontSize="lg"
+                    fontWeight="500"
+                    lineHeight="1.6"
+                  >
+                    あなたの面白い回答が
+                    <br />
+                    みんなを笑顔にする
+                  </Text>
+
+                  <Box
+                    position="absolute"
+                    w="100%"
+                    h="100%"
+                    overflow="hidden"
+                    top={0}
+                    left={0}
+                  >
+                    <AnimatedEmoji delay={0} />
+                    <AnimatedEmoji delay={1} />
+                    <AnimatedEmoji delay={2} />
+                    <AnimatedEmoji delay={3} />
+                  </Box>
+                </VStack>
+              </Box>
+            </Box>
+
+            {/* 右側のフォームパネル */}
+            <Box w={{ base: '100%', lg: '60%' }} position="relative">
               <motion.div
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.3, duration: 0.8 }}
               >
-                <Text color="red.400" fontSize="sm" textAlign="center">
-                  {error}
-                </Text>
-              </motion.div>
-            )}
-
-            <Divider borderColor="gray.600" />
-
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.6, duration: 0.5 }}
-            >
-              <VStack spacing={4} w="100%">
-                <Text color="white" fontSize="md" fontWeight="bold">
-                  Don&apos;t have an account?
-                </Text>
-                <Button
-                  w="300px"
-                  as={RouterLink}
-                  to="/signup"
-                  variant="outline"
-                  color="white"
-                  borderColor="gray.500"
-                  _hover={{
-                    bg: 'whiteAlpha.100',
-                    borderColor: 'white',
-                  }}
-                  size="lg"
-                  borderRadius="full"
+                <Box
+                  bg="rgba(20, 20, 20, 0.8)"
+                  backdropFilter="blur(20px)"
+                  borderRadius="30px"
+                  overflow="hidden"
+                  p={10}
+                  border="1px solid rgba(255, 255, 255, 0.1)"
+                  position="relative"
                 >
-                  Sign up
-                </Button>
-              </VStack>
-            </motion.div>
-          </VStack>
-        </Box>
-      </motion.div>
+                  <Box
+                    position="absolute"
+                    top="0"
+                    right="0"
+                    w="150px"
+                    h="150px"
+                    bg="linear-gradient(45deg, #8A2BE2, transparent)"
+                    opacity="0.1"
+                    filter="blur(30px)"
+                    borderRadius="full"
+                  />
 
-      {/*
-      <VStack mt={6} spacing={4}>
-        {['Google', 'Facebook'].map((provider, index) => (
-          <motion.div
-            key={provider}
-            initial={{ opacity: 0, x: -50 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.6 + index * 0.1, duration: 0.5 }}
-            style={{ width: '100%' }}
-          >
-            <Button
-              w="100%"
-              bg="whiteAlpha.100"
-              color="white"
-              size="lg"
-              _hover={{
-                bg: 'whiteAlpha.200',
-              }}
-              borderRadius="full"
-              leftIcon={<EmailIcon />}
-            >
-              Continue with {provider}
-            </Button>
-          </motion.div>
-        ))}
-      </VStack>
-      */}
-    </Container>
+                  <VStack spacing={8} align="stretch">
+                    <VStack spacing={3} align="start">
+                      <Text
+                        color="whiteAlpha.600"
+                        fontSize="sm"
+                        textTransform="uppercase"
+                        letterSpacing="wider"
+                      >
+                        Sign In
+                      </Text>
+                      <Heading color="white" fontSize="2xl" fontWeight="500">
+                        さあ、大喜利を始めよう
+                      </Heading>
+                    </VStack>
+
+                    <VStack spacing={6}>
+                      <FormControl>
+                        <InputGroup>
+                          <InputLeftElement color="whiteAlpha.600" mt={1.5}>
+                            <EmailIcon />
+                          </InputLeftElement>
+                          <Input
+                            variant="filled"
+                            placeholder="メールアドレス"
+                            bg="rgba(255, 255, 255, 0.05)"
+                            border="1px solid rgba(255, 255, 255, 0.08)"
+                            color="white"
+                            h="54px"
+                            fontSize="md"
+                            borderRadius="16px"
+                            _hover={{
+                              bg: 'rgba(255, 255, 255, 0.08)',
+                            }}
+                            _focus={{
+                              bg: 'rgba(255, 255, 255, 0.08)',
+                              borderColor: '#8A2BE2',
+                            }}
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                          />
+                        </InputGroup>
+                      </FormControl>
+
+                      <FormControl>
+                        <InputGroup>
+                          <InputLeftElement color="whiteAlpha.600" mt={1.5}>
+                            <LockIcon />
+                          </InputLeftElement>
+                          <Input
+                            variant="filled"
+                            type="password"
+                            placeholder="パスワード"
+                            bg="rgba(255, 255, 255, 0.05)"
+                            border="1px solid rgba(255, 255, 255, 0.08)"
+                            color="white"
+                            h="54px"
+                            fontSize="md"
+                            borderRadius="16px"
+                            _hover={{
+                              bg: 'rgba(255, 255, 255, 0.08)',
+                            }}
+                            _focus={{
+                              bg: 'rgba(255, 255, 255, 0.08)',
+                              borderColor: '#8A2BE2',
+                            }}
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                          />
+                        </InputGroup>
+                      </FormControl>
+                    </VStack>
+
+                    {error && (
+                      <Text color="red.300" fontSize="sm">
+                        {error}
+                      </Text>
+                    )}
+
+                    <VStack spacing={5} pt={4}>
+                      <Button
+                        w="100%"
+                        bgGradient="linear(to-r, #8A2BE2, #FF1493)"
+                        animation={`${glowAnimation} 3s infinite`}
+                        color="white"
+                        h="54px"
+                        fontSize="md"
+                        fontWeight="500"
+                        borderRadius="16px"
+                        _hover={{
+                          transform: 'translateY(-2px)',
+                          boxShadow: '0 4px 20px rgba(138, 43, 226, 0.4)',
+                        }}
+                        _active={{
+                          transform: 'translateY(0)',
+                        }}
+                        transition="all 0.2s"
+                        onClick={handleSignIn}
+                      >
+                        サインインする
+                      </Button>
+
+                      <Divider borderColor="whiteAlpha.200" />
+
+                      <Box textAlign="center">
+                        <Text color="whiteAlpha.700" fontSize="sm">
+                          まだアカウントをお持ちでない方は{' '}
+                          <Text
+                            as={RouterLink}
+                            to="/signup"
+                            color="purple.300"
+                            _hover={{ textDecoration: 'underline' }}
+                          >
+                            サインアップ
+                          </Text>
+                        </Text>
+                      </Box>
+                    </VStack>
+                  </VStack>
+                </Box>
+              </motion.div>
+            </Box>
+          </Box>
+        </motion.div>
+      </Container>
+    </Box>
   );
 }
 
