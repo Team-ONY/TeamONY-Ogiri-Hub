@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import {
   VStack,
@@ -20,6 +20,7 @@ import { CommentSection } from './CommentSection';
 import { CommentInput } from './CommentSection/CommentInput';
 import { useAlert } from '../../hooks/useAlert';
 import CreateOgiriButton from './Ogiri/CreateOgiriButton';
+import CreateOgiriEventModal from './Ogiri/CreateOgiriEventModal';
 
 const MotionBox = motion(Box);
 
@@ -30,6 +31,10 @@ function ThreadDetail() {
   const commentsEndRef = useRef(null);
   const { showAlert } = useAlert();
   const currentUser = auth.currentUser;
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const handleOpenModal = () => setIsModalOpen(true);
+  const handleCloseModal = () => setIsModalOpen(false);
 
   // ViewType の設定
   const currentViewType = location.pathname.includes('/admin/')
@@ -197,7 +202,11 @@ function ThreadDetail() {
           thread={thread}
         />
 
-        <CreateOgiriButton />
+        <CreateOgiriButton onOpen={handleOpenModal} />
+        <CreateOgiriEventModal
+          isOpen={isModalOpen}
+          onClose={handleCloseModal}
+        />
 
         <Box ref={commentsEndRef} />
       </VStack>
