@@ -1,15 +1,8 @@
-// src/components/Thread/CreateOogiriButton.jsx
 import { IconButton } from '@chakra-ui/react';
 import LaughIcon from '../../../Icons/LaughIcon';
-import { useNavigate } from 'react-router-dom';
+import PropTypes from 'prop-types';
 
-const CreateOgiriButton = () => {
-  const navigate = useNavigate();
-
-  const handleCreateOogiriEvent = () => {
-    navigate('/create-oogiri');
-  };
-
+const CreateOgiriButton = ({ onOpen }) => {
   return (
     <IconButton
       icon={<LaughIcon />}
@@ -25,10 +18,14 @@ const CreateOgiriButton = () => {
         bgGradient: 'linear(to-r, pink.500, purple.500)',
         transform: 'scale(1.05)',
       }}
-      onClick={handleCreateOogiriEvent}
+      onClick={onOpen}
       zIndex="10"
     />
   );
+};
+
+CreateOgiriButton.propTypes = {
+  onOpen: PropTypes.func.isRequired,
 };
 
 export default CreateOgiriButton;

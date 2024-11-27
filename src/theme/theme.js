@@ -25,5 +25,15 @@ export const theme = extendTheme({
         focusBorderColor: 'pink.500',
       },
     },
+    Radio: {
+      baseStyle: {
+        control: {
+          color: 'white',
+        },
+        label: {
+          color: 'white',
+        },
+      },
+    },
   },
 });
