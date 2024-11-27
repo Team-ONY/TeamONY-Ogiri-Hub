@@ -98,6 +98,7 @@ function Home() {
             <MotionButton
               leftIcon={<Icon as={FaPen} />}
               size="lg"
+              css={{ animation: `${glowAnimation} 1.5s infinite` }}
               whileHover={{
                 scale: 1.05,
                 boxShadow: '0 0 25px rgba(236, 72, 153, 0.5)',

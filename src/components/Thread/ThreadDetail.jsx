@@ -19,6 +19,7 @@ import { ThreadHeader } from './ThreadHeader';
 import { CommentSection } from './CommentSection';
 import { CommentInput } from './CommentSection/CommentInput';
 import { useAlert } from '../../hooks/useAlert';
+import CreateOgiriButton from './Ogiri/CreateOgiriButton';
 
 const MotionBox = motion(Box);
 
@@ -195,6 +196,8 @@ function ThreadDetail() {
           user={currentUser}
           thread={thread}
         />
+
+        <CreateOgiriButton />
 
         <Box ref={commentsEndRef} />
       </VStack>
