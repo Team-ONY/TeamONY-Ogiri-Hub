@@ -50,7 +50,7 @@ const UserInfoCard = ({ user }) => (
       >
         {user?.displayName}
       </Text>
-      <Text color="whiteAlpha.600">@{user?.uid?.slice(0, 8)}</Text>
+      <Text color="whiteAlpha.600">@{user?.email?.substr(0 , user?.email?.indexOf('@'))}</Text>
     </VStack>
   </MotionBox>
 );
