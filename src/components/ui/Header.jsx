@@ -1,244 +1,130 @@
-import { useState } from 'react';
 import {
   Box,
-  IconButton,
-  Drawer,
-  DrawerBody,
-  DrawerHeader,
-  DrawerOverlay,
-  DrawerContent,
-  VStack,
-  Text,
   Flex,
-  Spacer,
+  IconButton,
+  Text,
+  Avatar,
+  useBreakpointValue,
 } from '@chakra-ui/react';
-import { HamburgerIcon } from '@chakra-ui/icons';
-import { useNavigate, useLocation } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
-import ProfileIcon from '../../Icons/ProfileIcon';
-import ThreadIcon from '../../Icons/TheadIcon';
-import HomeIcon from '../../Icons/HomeIcon';
-import LogoutIcon from '../../Icons/LogoutIcon';
-import { useAuth } from '../../hooks/useAuth';
+import { motion } from 'framer-motion';
+import { HamburgerIcon, BellIcon } from '@chakra-ui/icons';
+import PropTypes from 'prop-types';
+import { useNavigate } from 'react-router-dom';
+import { auth } from '../../config/firebase';
 
-const MotionFlex = motion(Flex);
+// フレーマーモーションを使用したBox
+const MotionBox = motion(Box);
 
-function Header() {
-  const [isOpen, setIsOpen] = useState(false);
+function Header({ isDesktop, toggleSidebar }) {
   const navigate = useNavigate();
-  const location = useLocation();
-  const { logout } = useAuth();
+  const user = auth.currentUser;
 
-  const toggleDrawer = () => {
-    setIsOpen(!isOpen);
+  // レスポンシブなフォントサイズの設定
+  const logoFontSize = useBreakpointValue({ base: 'lg', md: 'xl' });
+  const iconSize = useBreakpointValue({ base: 5, md: 6 });
+  const bellIconSize = useBreakpointValue({ base: 6, md: 8 });
+
+  const handleAvatarClick = () => {
+    navigate('/profile');
   };
-
-  const handleNavigation = (path) => {
-    if (path === '/logout') {
-      navigate('/signin');
-    } else {
-      navigate(path);
-    }
-    setIsOpen(false);
-  };
-
-  const menuItems = [
-    { path: '/home', label: 'Home', icon: <HomeIcon /> },
-    { path: '/thread', label: 'Thread', icon: <ThreadIcon /> },
-    { path: '/profile', label: 'Profile', icon: <ProfileIcon /> },
-  ];
-
-  const isActivePath = (path) => location.pathname === path;
-
-  const handleLogout = async () => {
-    try {
-      await logout();
-    } catch (error) {
-      console.error('ログアウトエラー:', error);
-    }
+  const handleLogoClick = () => {
+    navigate('/home');
   };
 
   return (
     <Box
       as="header"
-      p={0}
-      bg="black"
-      display="flex"
-      justifyContent="flex-end"
+      height={{ base: '50px', md: '60px' }}
       width="100%"
+      bg="black"
       position="fixed"
       top="0"
       left="0"
-      height="80px"
+      right="0"
       zIndex="1000"
-      borderBottom="1px solid rgba(255, 25, 136, 0.1)"
-      borderRadius="0 0 1em 1em"
+      borderBottom="none"
     >
-      <IconButton
-        icon={<HamburgerIcon boxSize={6} />}
-        variant="ghost"
-        color="pink.400"
-        _hover={{
-          bg: 'whiteAlpha.50',
-          color: 'pink.300',
+      {/* アニメーションするグラデーションボーダー */}
+      <MotionBox
+        position="absolute"
+        bottom="0"
+        left="0"
+        right="0"
+        height="2px"
+        bgGradient="linear(to-r, pink.400, purple.500)"
+        animate={{
+          backgroundPosition: ['0% 50%', '100% 50%', '0% 50%'],
         }}
-        onClick={toggleDrawer}
-        aria-label="Open Menu"
-        mt="20px"
-        mr="20px"
-        transition="all 0.2s"
+        transition={{
+          duration: 3,
+          repeat: Infinity,
+          ease: 'linear',
+        }}
       />
-      <Drawer isOpen={isOpen} placement="left" onClose={toggleDrawer} size="xs">
-        <DrawerOverlay bg="blackAlpha.800" backdropFilter="blur(10px)" />
-        <DrawerContent
-          bg="black"
-          color="white"
-          display="flex"
-          flexDirection="column"
-        >
-          <DrawerHeader
-            fontSize="2xl"
+
+      <Flex
+        h="100%"
+        px={{ base: 2, md: 4 }}
+        alignItems="center"
+        justifyContent="space-between"
+        maxWidth="container.xl"
+        mx="auto"
+      >
+        {/* 以下、既存のコード */}
+        <Flex alignItems="center">
+          {!isDesktop && (
+            <IconButton
+              icon={<HamburgerIcon boxSize={iconSize} />}
+              onClick={toggleSidebar}
+              variant="ghost"
+              color="pink.400"
+              mr={2}
+              size={{ base: 'xs', md: 'sm' }}
+            />
+          )}
+
+          <Text
+            onClick={handleLogoClick}
+            bgGradient="linear(to-r, pink.400, purple.500)"
+            bgClip="text"
+            fontSize={logoFontSize}
             fontWeight="bold"
-            color="white"
-            borderBottomWidth="1px"
-            borderBottomColor="whiteAlpha.100"
-            textAlign="center"
-            py={6}
+            cursor="pointer"
+            whiteSpace="nowrap"
           >
-            <Text
-              bgGradient="linear(to-r, pink.400, purple.500)"
-              bgClip="text"
-              letterSpacing="wider"
-            >
-              ✨ Ogiri Hub ✨
-            </Text>
-          </DrawerHeader>
-          <DrawerBody p={4} display="flex" flexDirection="column">
-            <VStack spacing={3} align="stretch" mt={4}>
-              <AnimatePresence>
-                {menuItems.map((item, index) => (
-                  <MotionFlex
-                    key={item.path}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: 10 }}
-                    transition={{
-                      delay: index * 0.1,
-                      type: 'spring',
-                      stiffness: 100,
-                    }}
-                    onClick={() => handleNavigation(item.path)}
-                    align="center"
-                    p={4}
-                    cursor="pointer"
-                    bg={
-                      isActivePath(item.path)
-                        ? 'rgba(255, 182, 193, 0.1)'
-                        : 'transparent'
-                    }
-                    borderRadius="xl"
-                    position="relative"
-                    _hover={{
-                      bg: 'rgba(255, 182, 193, 0.15)',
-                      transform: 'translateY(-2px)',
-                    }}
-                    _active={{
-                      transform: 'scale(0.98)',
-                    }}
-                    role="group"
-                  >
-                    {isActivePath(item.path) && (
-                      <Box
-                        position="absolute"
-                        left={0}
-                        top={0}
-                        bottom={0}
-                        width="3px"
-                        bgGradient="linear(to-b, pink.400, purple.500)"
-                        borderRadius="full"
-                      />
-                    )}
-                    <Box
-                      p={2}
-                      borderRadius="lg"
-                      fontSize="xl"
-                      mr={3}
-                      transition="all 0.2s"
-                      _groupHover={{
-                        transform: 'scale(1.1) rotate(5deg)',
-                      }}
-                    >
-                      {item.icon}
-                    </Box>
-                    <Text
-                      fontSize="md"
-                      fontWeight={isActivePath(item.path) ? 'bold' : 'medium'}
-                      color={isActivePath(item.path) ? 'pink.300' : 'white'}
-                      letterSpacing="wide"
-                      transition="all 0.2s"
-                      _groupHover={{
-                        color: 'pink.300',
-                      }}
-                    >
-                      {item.label}
-                    </Text>
-                  </MotionFlex>
-                ))}
-              </AnimatePresence>
-            </VStack>
+            Ogiri Hub
+          </Text>
+        </Flex>
 
-            <Spacer />
-
-            {/* Logoutアイコンを個別に使用する場合 */}
-            <MotionFlex
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 20 }}
-              onClick={handleLogout}
-              align="center"
-              p={4}
-              mb={6}
-              cursor="pointer"
-              borderRadius="xl"
-              bg="rgba(255, 182, 193, 0.05)"
-              _hover={{
-                bg: 'rgba(255, 182, 193, 0.1)',
-                transform: 'translateY(-2px)',
-              }}
-              _active={{
-                transform: 'scale(0.98)',
-              }}
-              transition="all 0.2s"
-              role="group"
-              boxShadow="0 -10px 15px -3px rgba(0, 0, 0, 0.1)"
-            >
-              <Box
-                p={2}
-                borderRadius="lg"
-                fontSize="xl"
-                mr={3}
-                transition="all 0.2s"
-                _groupHover={{
-                  transform: 'scale(1.1) rotate(-5deg)',
-                }}
-              >
-                <LogoutIcon />
-              </Box>
-              <Text
-                fontSize="md"
-                fontWeight="medium"
-                bgGradient="linear(to-r, pink.400, purple.500)"
-                bgClip="text"
-                letterSpacing="wide"
-              >
-                Logout
-              </Text>
-            </MotionFlex>
-          </DrawerBody>
-        </DrawerContent>
-      </Drawer>
+        <Flex align="center" gap={{ base: 1, md: 2 }} alignItems="center">
+          <IconButton
+            icon={<BellIcon boxSize={bellIconSize} color="pink.400" />}
+            variant="ghost"
+            borderRadius="md"
+            border="2px solid transparent"
+            _hover={{
+              bg: 'whiteAlpha.200',
+              color: 'purple.500',
+            }}
+            size={{ base: 'xs', md: 'sm' }}
+            mr={{ base: 1, md: 2 }}
+          />
+          <Avatar
+            size={{ base: 'xs', md: 'sm' }}
+            name={user ? user.displayName : 'Anonymous'}
+            src={user?.photoURL || 'defaultPhotoURL'}
+            onClick={handleAvatarClick}
+            cursor="pointer"
+          />
+        </Flex>
+      </Flex>
     </Box>
   );
 }
+
+Header.propTypes = {
+  isDesktop: PropTypes.bool.isRequired,
+  toggleSidebar: PropTypes.func.isRequired,
+};
 
 export default Header;

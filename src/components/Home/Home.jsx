@@ -18,6 +18,7 @@ import {
   IconButton,
   SimpleGrid,
   Progress,
+  useDisclosure,
 } from '@chakra-ui/react';
 import { motion } from 'framer-motion';
 import {
@@ -32,6 +33,7 @@ import {
   FaUsers,
 } from 'react-icons/fa';
 import { ScrollMenu } from 'react-horizontal-scrolling-menu';
+import CreateThreadModal from '../Thread/CreateThreadModal';
 
 const MotionBox = motion(Box);
 const MotionButton = motion(Button);
@@ -45,6 +47,7 @@ const glowAnimation = keyframes`
 function Home() {
   const accentColor = 'pink.400';
   const bgGradient = 'linear(to-br, blackAlpha.800, gray.900)';
+  const { isOpen, onOpen, onClose } = useDisclosure();
 
   return (
     <Box
@@ -53,7 +56,6 @@ function Home() {
       position="relative"
       overflowY="auto"
       color="white"
-      pt={16}
     >
       <Container maxW="1600px" py={{ base: 6, md: 12 }} px={{ base: 4, md: 8 }}>
         {/* ヘッダーセクション */}
@@ -94,10 +96,10 @@ function Home() {
                 面白いスレッドに参加して、みんなで大喜利を楽しもう！
               </Text>
             </VStack>
-
             <MotionButton
               leftIcon={<Icon as={FaPen} />}
               size="lg"
+              onClick={onOpen} // モーダルを開く
               css={{ animation: `${glowAnimation} 1.5s infinite` }}
               whileHover={{
                 scale: 1.05,
@@ -118,6 +120,7 @@ function Home() {
             >
               スレッドを作成
             </MotionButton>
+            <CreateThreadModal isOpen={isOpen} onClose={onClose} />
           </Flex>
 
           {/* カテゴリータブ */}

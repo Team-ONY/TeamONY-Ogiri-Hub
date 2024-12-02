@@ -16,8 +16,8 @@ import {
   HStack,
   Grid,
   Portal,
+  useDisclosure,
 } from '@chakra-ui/react';
-import { useNavigate } from 'react-router-dom';
 import ThreadList from './ThreadList';
 import { motion } from 'framer-motion';
 import {
@@ -30,6 +30,7 @@ import {
   ChatIcon,
 } from '@chakra-ui/icons';
 import ThreadIcon from '../../Icons/TheadIcon';
+import CreateThreadModal from './CreateThreadModal';
 
 const MotionBox = motion(Box);
 const MotionButton = motion(Button);
@@ -37,9 +38,9 @@ const MotionMenuItem = motion(MenuItem);
 const MotionTag = motion(Tag);
 
 function Thread() {
-  const navigate = useNavigate();
   const bgGradient = 'linear(to-br, blackAlpha.800, gray.900)';
   const accentColor = 'pink.400';
+  const { isOpen, onOpen, onClose } = useDisclosure();
 
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState('newest');
@@ -53,7 +54,7 @@ function Thread() {
   };
 
   return (
-    <Box minH="100vh" bg={bgGradient} pt={32} px={4}>
+    <Box minH="100vh" bg={bgGradient} pt={12} px={4}>
       <MotionBox
         maxW="1200px"
         mx="auto"
@@ -95,7 +96,7 @@ function Thread() {
             <MotionButton
               leftIcon={<AddIcon />}
               size="lg"
-              onClick={() => navigate('/create-thread')}
+              onClick={onOpen}
               whileHover={{
                 scale: 1.05,
                 boxShadow: '0 0 25px rgba(236, 72, 153, 0.5)',
@@ -116,6 +117,8 @@ function Thread() {
               新規スレッド作成
             </MotionButton>
           </Flex>
+
+          <CreateThreadModal isOpen={isOpen} onClose={onClose} />
 
           <Grid templateColumns={{ base: '1fr', md: '2fr 1fr' }} gap={6} mb={6}>
             <InputGroup size="lg">
@@ -294,7 +297,8 @@ function Thread() {
           bg="rgba(0, 0, 0, 0.4)"
           backdropFilter="blur(16px)"
           borderRadius="3xl"
-          p={8}
+          px={4}
+          py={12}
           boxShadow="0 8px 32px 0 rgba(236, 72, 153, 0.37), 0 8px 32px 0 rgba(128, 90, 213, 0.37)"
           border="1px solid rgba(255, 255, 255, 0.1)"
           initial={{ y: 20, opacity: 0 }}
