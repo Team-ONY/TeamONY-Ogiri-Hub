@@ -31,6 +31,7 @@ import {
 } from '@chakra-ui/icons';
 import ThreadIcon from '../../Icons/TheadIcon';
 import CreateThreadModal from './CreateThreadModal';
+import { getThreads } from '../../services/threadService';
 
 const MotionBox = motion(Box);
 const MotionButton = motion(Button);
@@ -45,12 +46,19 @@ function Thread() {
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState('newest');
 
+  const [threads, setThreads] = useState([]);
+
   const handleSearchChange = (event) => {
     setSearchTerm(event.target.value);
   };
 
   const handleSortChange = (sortOption) => {
     setSortBy(sortOption);
+  };
+
+  const handleThreadCreated = async () => {
+    const updatedThreads = await getThreads();
+    setThreads(updatedThreads);
   };
 
   return (
@@ -89,7 +97,7 @@ function Thread() {
                 bgClip="text"
                 textShadow="0 0 20px rgba(236, 72, 153, 0.3)"
               >
-                THREAD FORUM
+                THREAD
               </Heading>
             </Flex>
 
@@ -118,7 +126,11 @@ function Thread() {
             </MotionButton>
           </Flex>
 
-          <CreateThreadModal isOpen={isOpen} onClose={onClose} />
+          <CreateThreadModal
+            isOpen={isOpen}
+            onClose={onClose}
+            onThreadCreated={handleThreadCreated}
+          />
 
           <Grid templateColumns={{ base: '1fr', md: '2fr 1fr' }} gap={6} mb={6}>
             <InputGroup size="lg">
@@ -305,7 +317,12 @@ function Thread() {
           animate={{ y: 0, opacity: 1 }}
           transition={{ duration: 0.5 }}
         >
-          <ThreadList searchTerm={searchTerm} sortBy={sortBy} layout="grid" />
+          <ThreadList
+            searchTerm={searchTerm}
+            sortBy={sortBy}
+            threads={threads}
+            setThreads={setThreads}
+          />
         </MotionBox>
       </MotionBox>
     </Box>

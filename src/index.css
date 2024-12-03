@@ -1,6 +1,7 @@
 @font-face {
   font-family: 'Circular Std';
-  src: url('./assets/fonts/CircularStd-Book.woff2') format('woff2'),
+  src:
+    url('./assets/fonts/CircularStd-Book.woff2') format('woff2'),
     url('./assets/fonts/CircularStd-Book.woff') format('woff');
   font-weight: 400;
   font-style: normal;
@@ -9,7 +10,8 @@
 
 @font-face {
   font-family: 'Circular Std';
-  src: url('./assets/fonts/CircularStd-Medium.woff2') format('woff2'),
+  src:
+    url('./assets/fonts/CircularStd-Medium.woff2') format('woff2'),
     url('./assets/fonts/CircularStd-Medium.woff') format('woff');
   font-weight: 500;
   font-style: normal;
@@ -18,7 +20,8 @@
 
 @font-face {
   font-family: 'Circular Std';
-  src: url('./assets/fonts/CircularStd-Bold.woff2') format('woff2'),
+  src:
+    url('./assets/fonts/CircularStd-Bold.woff2') format('woff2'),
     url('./assets/fonts/CircularStd-Bold.woff') format('woff');
   font-weight: 700;
   font-style: normal;
@@ -31,7 +34,8 @@
   --text-primary: rgba(255, 255, 255, 0.87);
   --text-secondary: rgba(255, 255, 255, 0.6);
 
-  font-family: 'Circular Std', Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  font-family: 'Circular Std', Inter, system-ui, Avenir, Helvetica, Arial,
+    sans-serif;
   line-height: 1.6;
   font-weight: 400;
   color-scheme: dark;
@@ -59,10 +63,12 @@ body {
   min-height: 100vh;
   width: 100%;
   height: 100%;
-  background: linear-gradient(145deg,
-      var(--primary-bg) 0%,
-      var(--primary-bg) 40%,
-      var(--accent-color) 100%);
+  background: linear-gradient(
+    145deg,
+    var(--primary-bg) 0%,
+    var(--primary-bg) 40%,
+    var(--accent-color) 100%
+  );
   font-family: 'Circular Std', sans-serif;
   background-attachment: fixed;
 
@@ -84,9 +90,11 @@ body::after {
   left: 0;
   width: 100%;
   height: 100%;
-  background: radial-gradient(circle at 50% 50%,
-      rgba(255, 255, 255, 0.03) 0%,
-      transparent 70%);
+  background: radial-gradient(
+    circle at 50% 50%,
+    rgba(255, 255, 255, 0.03) 0%,
+    transparent 70%
+  );
   pointer-events: none;
 }
 

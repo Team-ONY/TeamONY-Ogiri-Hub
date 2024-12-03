@@ -1,28 +1,15 @@
 import { useEffect, useRef, useState } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import {
-  VStack,
-  Box,
-  Flex,
-  Spinner,
-  IconButton,
-  Icon,
-  Text,
-} from '@chakra-ui/react';
-import { motion } from 'framer-motion';
-import { FaArrowLeft } from 'react-icons/fa';
+import { VStack, Box, Flex, Spinner, Text } from '@chakra-ui/react';
 import { auth } from '../../config/firebase';
 import { useThreadData } from './hooks/useThreadData';
 import { useComments } from './hooks/useComments';
-import { useInfiniteScroll } from './hooks/useInfiniteScroll';
 import { ThreadHeader } from './ThreadHeader';
 import { CommentSection } from './CommentSection';
-import { CommentInput } from './CommentSection/CommentInput';
+import { ParticipantsList } from './ParticipantsList';
 import { useAlert } from '../../hooks/useAlert';
 import CreateOgiriButton from './Ogiri/CreateOgiriButton';
 import CreateOgiriEventModal from './Ogiri/CreateOgiriEventModal';
-
-const MotionBox = motion(Box);
 
 function ThreadDetail() {
   const { id } = useParams();
@@ -42,11 +29,13 @@ function ThreadDetail() {
     : 'regular';
 
   // Custom Hooks
-  const { thread, setThread, threadCreator, loadingThread } = useThreadData(
-    id,
-    currentUser,
-    currentViewType
-  );
+  const {
+    thread,
+    setThread,
+    threadCreator,
+    participantDetails,
+    loadingThread,
+  } = useThreadData(id, currentUser, currentViewType);
 
   const {
     displayedComments,
@@ -56,77 +45,81 @@ function ThreadDetail() {
     isLoadingComments,
     setIsLoadingComments,
     error,
-    isNewCommentAdded,
     handleAddComment,
     handleDeleteComment,
   } = useComments(id, thread, setThread, currentUser);
 
   // スレッドデータ取得後のコメント初期化を確認
   useEffect(() => {
-    if (thread?.comments) {
-      const initialComments = thread.comments.slice(0, 20).map((comment) => ({
+    if (thread?.comments && !displayedComments.length) {
+      const sortedComments = [...thread.comments].sort(
+        (a, b) =>
+          b.createdAt.toDate().getTime() - a.createdAt.toDate().getTime()
+      );
+      const initialComments = sortedComments.slice(0, 20).map((comment) => ({
         ...comment,
         uniqueKey: `${comment.id}-initial`,
       }));
-
-      console.log('Setting initial comments:', initialComments);
 
       setDisplayedComments(initialComments);
       setHasMoreComments(thread.comments.length > 20);
       setIsLoadingComments(false);
     }
-  }, [thread]);
-
-  // ユーザー情報のログを追加
-  useEffect(() => {
-    console.log('Current User:', currentUser);
-    console.log('thread: ', thread);
-    console.log('threadCreator: ', threadCreator);
-  }, [currentUser, thread, threadCreator]);
+  }, [
+    thread,
+    displayedComments.length,
+    setDisplayedComments,
+    setHasMoreComments,
+    setIsLoadingComments,
+  ]);
 
   // Infinite Scroll の設定
   const loadMoreComments = () => {
-    if (!thread?.comments) return;
-
-    const startIndex = displayedComments.length;
-    const endIndex = startIndex + 20;
-    const nextBatch = thread.comments
-      .slice(startIndex, endIndex)
-      .map((comment) => ({
-        ...comment,
-        uniqueKey: `${comment.id}-${startIndex}`,
-      }));
-
-    if (nextBatch.length === 0) {
-      setHasMoreComments(false);
+    if (!thread?.comments || isLoadingComments) {
+      console.log('Loading prevented: ', {
+        hasComments: !!thread?.comments,
+        isLoadingComments,
+      });
       return;
     }
 
-    setDisplayedComments((prev) => {
-      const existingIds = new Set(prev.map((comment) => comment.id));
-      const newComments = nextBatch.filter(
-        (comment) => !existingIds.has(comment.id)
-      );
+    console.log('Loading more comments...');
+    setIsLoadingComments(true);
 
-      const allComments = [...prev, ...newComments];
-      return allComments.sort(
+    try {
+      const startIndex = displayedComments.length;
+      const endIndex = startIndex + 20;
+
+      const sortedComments = [...thread.comments].sort(
         (a, b) =>
-          a.createdAt.toDate().getTime() - b.createdAt.toDate().getTime()
+          b.createdAt.toDate().getTime() - a.createdAt.toDate().getTime()
       );
-    });
-  };
 
-  useInfiniteScroll(loadMoreComments, {
-    hasMoreComments,
-    displayedComments,
-  });
+      console.log('Total comments:', sortedComments.length);
+      console.log('Loading from index:', startIndex, 'to', endIndex);
 
-  // 新しいコメントが追加された時のスクロール処理
-  useEffect(() => {
-    if (isNewCommentAdded && commentsEndRef.current) {
-      commentsEndRef.current.scrollIntoView({ behavior: 'smooth' });
+      const nextBatch = sortedComments
+        .slice(startIndex, endIndex)
+        .map((comment) => ({
+          ...comment,
+          uniqueKey: `${comment.id}-${Date.now()}`,
+        }));
+
+      if (nextBatch.length === 0) {
+        console.log('No more comments to load');
+        setHasMoreComments(false);
+        setIsLoadingComments(false);
+        return;
+      }
+
+      setDisplayedComments((prev) => [...prev, ...nextBatch]);
+      setHasMoreComments(sortedComments.length > endIndex);
+    } catch (error) {
+      console.error('Error loading more comments:', error);
+    } finally {
+      setIsLoadingComments(false);
     }
-  }, [isNewCommentAdded]);
+  };
 
   const handleGoToAdminPage = () => {
     if (!thread || !currentUser) return;
@@ -158,65 +151,70 @@ function ThreadDetail() {
   }
 
   return (
-    <>
-      <VStack spacing={6} align="stretch" mt={20} pb={20}>
-        <MotionBox
-          position="fixed"
-          top="100px"
-          left={6}
-          zIndex={20}
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.3 }}
-        >
-          <IconButton
-            icon={<Icon as={FaArrowLeft} />}
-            onClick={() => navigate('/thread')}
-            bg="linear-gradient(135deg, #FF1988 0%, #805AD5 100%)"
-            color="white"
-            size="lg"
-            borderRadius="full"
-            aria-label="Back to threads"
-            _hover={{
-              transform: 'translateY(-2px)',
-              boxShadow: '0 8px 15px -3px rgba(255, 25, 136, 0.3)',
-              bg: 'linear-gradient(135deg, #FF1988 20%, #6B46C1 120%)',
+    <Flex
+      maxW="1400px"
+      mx="auto"
+      px={4}
+      gap={8}
+      mt={10}
+      pb={20}
+      position="relative"
+    >
+      {/* メインコンテンツ */}
+      <Box flex="1">
+        <VStack spacing={6} align="stretch">
+          <ThreadHeader
+            thread={{
+              ...thread,
+              comments: thread?.comments || [],
             }}
-            _active={{ transform: 'scale(0.95)' }}
+            threadCreator={threadCreator}
+            currentUser={currentUser}
+            onAdminClick={handleGoToAdminPage}
+            onSubmit={handleAddComment}
+            error={error}
           />
-        </MotionBox>
+          <CommentSection
+            comments={displayedComments}
+            isLoading={isLoadingComments}
+            hasMore={hasMoreComments}
+            onDelete={handleDeleteComment}
+            user={currentUser}
+            thread={thread}
+            onLoadMore={loadMoreComments}
+          />
+          <CreateOgiriButton onOpen={handleOpenModal} />
+          <CreateOgiriEventModal
+            isOpen={isModalOpen}
+            onClose={handleCloseModal}
+          />
+          <Box ref={commentsEndRef} />
+        </VStack>
+      </Box>
 
-        <ThreadHeader
-          thread={thread}
-          threadCreator={threadCreator}
-          currentUser={currentUser}
-          onAdminClick={handleGoToAdminPage}
-        />
-
-        <CommentSection
-          comments={displayedComments}
-          isLoading={isLoadingComments}
-          hasMore={hasMoreComments}
-          onDelete={handleDeleteComment}
-          user={currentUser}
-          thread={thread}
-        />
-
-        <CreateOgiriButton onOpen={handleOpenModal} />
-        <CreateOgiriEventModal
-          isOpen={isModalOpen}
-          onClose={handleCloseModal}
-        />
-
-        <Box ref={commentsEndRef} />
-      </VStack>
-
-      <CommentInput
-        user={currentUser}
-        onSubmit={handleAddComment}
-        error={error}
-      />
-    </>
+      {/* 参加者リスト */}
+      <Box
+        position="sticky"
+        top="20px"
+        height="fit-content"
+        display={{ base: 'none', xl: 'block' }}
+      >
+        {thread?.participants && participantDetails && (
+          <ParticipantsList
+            participants={thread.participants
+              .filter((participantId) => participantDetails[participantId])
+              .map((participantId) => ({
+                uid: participantId,
+                displayName:
+                  participantDetails[participantId]?.username ||
+                  '読み込み中...',
+                photoURL: participantDetails[participantId]?.photoURL || null,
+              }))}
+            threadCreatorId={thread.createdBy}
+          />
+        )}
+      </Box>
+    </Flex>
   );
 }
 
