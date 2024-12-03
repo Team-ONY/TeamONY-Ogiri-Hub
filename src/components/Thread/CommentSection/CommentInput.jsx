@@ -1,110 +1,159 @@
-// components/thread/CommentSection/CommentInput.jsx
 import { useState } from 'react';
-import { Box, Flex, Avatar, Text } from '@chakra-ui/react';
+import {
+  Box,
+  Flex,
+  Avatar,
+  Text,
+  IconButton,
+  Icon,
+  useBreakpointValue,
+} from '@chakra-ui/react';
 import { motion } from 'framer-motion';
-import { Input, Button } from '@chakra-ui/react';
+import { Textarea } from '@chakra-ui/react';
 import { PropTypes } from 'prop-types';
+import { IoSendSharp } from 'react-icons/io5';
+import { IoSparklesSharp } from 'react-icons/io5';
 
 const MotionBox = motion(Box);
-const MotionInput = motion(Input);
-const MotionButton = motion(Button);
+const MotionIconButton = motion(IconButton);
 
 export const CommentInput = ({ user, onSubmit, error }) => {
   const [comment, setComment] = useState('');
+  const isMac = /Mac|iPod|iPhone|iPad/.test(navigator.platform);
+
+  const placeholderText = useBreakpointValue({
+    base: `コメントを追加 (${isMac ? 'Cmd' : 'Ctrl'}+Enter)`,
+    md: `コメントを追加（${isMac ? 'Cmd' : 'Ctrl'} + Enterで送信）`,
+  });
 
   const handleSubmit = () => {
-    onSubmit(comment);
+    const trimmedComment = comment.trim();
+    if (!trimmedComment) return;
+
+    onSubmit(trimmedComment);
     setComment('');
+  };
+
+  const handleKeyPress = (e) => {
+    // Macの場合はCmd+Enter、それ以外はCtrl+Enter
+    if (e.key === 'Enter' && ((isMac && e.metaKey) || (!isMac && e.ctrlKey))) {
+      e.preventDefault();
+      handleSubmit();
+    }
   };
 
   return (
     <MotionBox
-      p={5}
-      bgGradient="radial(circle at top left, rgba(255, 105, 180, 0.8), rgba(0, 0, 0, 1))"
-      borderRadius="2xl"
-      boxShadow="0 20px 25px -5px rgba(0, 0, 0, 0.2), 0 10px 10px -5px rgba(0, 0, 0, 0.1)"
-      position="fixed"
-      bottom={4}
-      left="50%"
-      transform="translateX(-50%)"
-      zIndex={10}
-      width="1100px"
-      maxWidth="95%"
-      backdropFilter="blur(8px)"
-      border="1px solid"
-      borderColor="whiteAlpha.200"
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+      position="relative"
     >
-      <Flex align="center" mb={6}>
-        <Avatar
-          name={user ? user.displayName : 'Anonymous'}
-          src={user?.photoURL || ''}
-          size="md"
-          mr={3}
-          border="2px solid"
-          borderColor="pink.400"
+      <Box
+        bg="rgba(0, 0, 0, 0.7)"
+        backdropFilter="blur(20px)"
+        borderRadius="24px"
+        border="1px solid"
+        borderColor="whiteAlpha.200"
+        overflow="hidden"
+        position="relative"
+      >
+        <Box
+          position="absolute"
+          top={0}
+          left={0}
+          right={0}
+          height="2px"
+          bgGradient="linear(to-r, pink.400, purple.500)"
         />
-        <MotionInput
-          placeholder="コメントを追加"
-          value={comment}
-          onChange={(e) => setComment(e.target.value)}
-          bg="blackAlpha.700"
-          color="white"
-          borderRadius="xl"
-          py={4}
-          px={5}
-          fontSize="md"
-          border="2px solid"
-          borderColor="whiteAlpha.300"
-          _hover={{
-            borderColor: 'pink.500',
-            boxShadow: '0 0 15px rgba(255, 105, 180, 0.15)',
-          }}
-          _focus={{
-            borderColor: 'pink.400',
-            boxShadow: '0 0 0 2px rgba(255, 25, 136, 0.4)',
-            bg: 'blackAlpha.800',
-          }}
-          _placeholder={{ color: 'whiteAlpha.600' }}
-          initial={{ opacity: 0, x: -10 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.4, duration: 0.5 }}
-          flex="1"
-        />
-        <MotionButton
-          onClick={handleSubmit}
-          colorScheme="pink"
-          size="lg"
-          fontWeight="bold"
-          borderRadius="xl"
-          px={8}
-          ml={3}
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.5, duration: 0.5 }}
-          _hover={{
-            transform: 'translateY(-2px)',
-            boxShadow: '0 12px 20px -4px rgba(255, 25, 136, 0.3)',
-            bg: 'pink.500',
-          }}
-          _active={{
-            transform: 'scale(0.98)',
-            bg: 'pink.600',
-          }}
-        >
-          コメントする
-        </MotionButton>
-      </Flex>
-      {error && (
-        <Text
-          color="pink.300"
-          fontSize="sm"
-          textAlign="center"
-          mt={2}
-          fontWeight="medium"
-        >
-          {error}
-        </Text>
-      )}
+
+        <Box p={4}>
+          <Flex gap={3} align="center">
+            <Box position="relative">
+              <Avatar
+                name={user ? user.displayName : 'Anonymous'}
+                src={user?.photoURL || ''}
+                size="sm"
+                border="2px solid"
+                borderColor="pink.400"
+                boxShadow="0 0 20px rgba(255, 105, 180, 0.2)"
+              />
+              <Icon
+                as={IoSparklesSharp}
+                position="absolute"
+                bottom="-1"
+                right="-1"
+                color="pink.400"
+                w={3}
+                h={3}
+              />
+            </Box>
+
+            <Box flex={1} position="relative">
+              <Textarea
+                placeholder={placeholderText}
+                value={comment}
+                onChange={(e) => setComment(e.target.value)}
+                onKeyDown={handleKeyPress}
+                bg="whiteAlpha.50"
+                border="none"
+                color="white"
+                fontSize="sm"
+                minH="40px"
+                maxH="120px"
+                py={2}
+                px={3}
+                borderRadius="xl"
+                resize="none"
+                _placeholder={{ color: 'whiteAlpha.500' }}
+                _focus={{
+                  bg: 'whiteAlpha.100',
+                  boxShadow: 'none',
+                }}
+                sx={{
+                  '&::-webkit-scrollbar': {
+                    width: '4px',
+                  },
+                  '&::-webkit-scrollbar-track': {
+                    background: 'transparent',
+                  },
+                  '&::-webkit-scrollbar-thumb': {
+                    background: 'rgba(255, 105, 180, 0.3)',
+                    borderRadius: '4px',
+                  },
+                }}
+              />
+            </Box>
+
+            <MotionIconButton
+              icon={<IoSendSharp />}
+              aria-label="Send comment"
+              isDisabled={!comment.trim()}
+              onClick={handleSubmit}
+              size="sm"
+              variant="ghost"
+              color="pink.400"
+              _hover={{
+                bg: 'rgba(255, 105, 180, 0.1)',
+              }}
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
+            />
+          </Flex>
+
+          {error && (
+            <Text
+              color="red.400"
+              fontSize="xs"
+              mt={2}
+              textAlign="center"
+              fontWeight="medium"
+            >
+              {error}
+            </Text>
+          )}
+        </Box>
+      </Box>
     </MotionBox>
   );
 };
