@@ -1,5 +1,5 @@
 // components/thread/CommentSection/index.jsx
-import { VStack, Flex, Spinner, Text } from '@chakra-ui/react';
+import { VStack, Flex, Spinner, Text, Button } from '@chakra-ui/react';
 import { CommentItem } from './CommentItem';
 import PropTypes from 'prop-types';
 
@@ -10,14 +10,8 @@ export const CommentSection = ({
   onDelete,
   user,
   thread,
+  onLoadMore,
 }) => {
-  // デバッグ用のログを追加
-  console.log('CommentSection props:', {
-    commentsLength: comments.length,
-    isLoading,
-    hasMore,
-  });
-
   if (isLoading && (!comments || comments.length === 0)) {
     return (
       <Flex justify="center" py={8}>
@@ -31,7 +25,13 @@ export const CommentSection = ({
   }
 
   return (
-    <VStack spacing={4} align="stretch" mt={6}>
+    <VStack
+      spacing={4}
+      align="stretch"
+      mt={6}
+      width={{ base: '100%', md: '80%' }}
+      mx="auto"
+    >
       {comments.length > 0 ? (
         <>
           {comments.map((comment, index) => (
@@ -47,8 +47,38 @@ export const CommentSection = ({
           ))}
 
           {hasMore && (
-            <Flex justify="center" my={4}>
-              <Spinner size="sm" color="pink.400" />
+            <Flex justify="center" my={6}>
+              <Button
+                onClick={onLoadMore}
+                isLoading={isLoading}
+                bg="transparent"
+                border="2px solid"
+                borderColor="pink.400"
+                color="pink.400"
+                size="md"
+                px={10}
+                py={5}
+                fontSize="sm"
+                fontWeight="medium"
+                letterSpacing="wide"
+                rounded="full"
+                _hover={{
+                  bg: 'pink.50',
+                  borderColor: 'pink.500',
+                  color: 'pink.500',
+                  transform: 'translateY(-2px)',
+                  boxShadow: '0 8px 20px -8px rgba(255, 105, 180, 0.5)',
+                }}
+                _active={{
+                  transform: 'translateY(0)',
+                  bg: 'pink.100',
+                }}
+                _loading={{
+                  opacity: 0.8,
+                }}
+              >
+                もっと見る
+              </Button>
             </Flex>
           )}
         </>
@@ -68,4 +98,5 @@ CommentSection.propTypes = {
   onDelete: PropTypes.func.isRequired,
   user: PropTypes.object,
   thread: PropTypes.object,
+  onLoadMore: PropTypes.func.isRequired,
 };
