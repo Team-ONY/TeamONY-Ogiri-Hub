@@ -35,8 +35,12 @@ import PropTypes from 'prop-types';
 const MotionBox = motion(Box);
 const MotionTag = motion(Tag);
 
-function ThreadList({ searchTerm = '', sortBy = 'newest' }) {
-  const [threads, setThreads] = useState([]);
+function ThreadList({
+  searchTerm = '',
+  sortBy = 'newest',
+  threads,
+  setThreads,
+}) {
   const [selectedThread, setSelectedThread] = useState(null);
   const { isOpen, onOpen, onClose } = useDisclosure();
   const navigate = useNavigate();
@@ -48,7 +52,7 @@ function ThreadList({ searchTerm = '', sortBy = 'newest' }) {
       setThreads(threadsData);
     };
     fetchThreads();
-  }, []);
+  }, [setThreads]);
 
   const handleJoinClick = async (thread) => {
     const isJoined =
@@ -336,6 +340,8 @@ function ThreadList({ searchTerm = '', sortBy = 'newest' }) {
 ThreadList.propTypes = {
   searchTerm: PropTypes.string,
   sortBy: PropTypes.oneOf(['newest', 'popular', 'commentCount']),
+  threads: PropTypes.array.isRequired,
+  setThreads: PropTypes.func.isRequired,
 };
 
 export default ThreadList;
