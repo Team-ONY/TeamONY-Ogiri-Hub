@@ -190,7 +190,7 @@ const CreateOgiriEventModal = ({ isOpen, onClose }) => {
                   <Icon as={FiEdit3} /> テキストお題
                 </FormLabel>
                 <MotionInput
-                  placeholder="面白いおを入力してくさい"
+                  placeholder="面白いお題を入力してください"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   bg="blackAlpha.400"
