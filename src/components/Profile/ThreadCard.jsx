@@ -4,7 +4,7 @@ import { PropTypes } from 'prop-types';
 
 const MotionBox = motion(Box);
 
-const ThreadCard = ({ threads }) => (
+const ThreadCard = ({ threads, user }) => (
   <MotionBox
     initial={{ opacity: 0, y: 20 }}
     animate={{ opacity: 1, y: 0 }}
@@ -23,9 +23,7 @@ const ThreadCard = ({ threads }) => (
       <HStack spacing={3} align="center">
         <Avatar
           size="md" //ここで名前とアイコン表示中
-          // eslint-disable-next-line no-unused-vars
           name={user ? user.displayName : 'Anonymous'}
-          // eslint-disable-next-line no-unused-vars
           src={user?.photoURL || 'defaultPhotoURL'}
           border="2px solid"
           borderColor="purple.500"
@@ -81,6 +79,13 @@ ThreadCard.propTypes = {
       createdAt: PropTypes.object.isRequired, // Firebase Timestamp
     })
   ).isRequired,
+  user: PropTypes.shape({
+    displayName: PropTypes.string.isRequired,
+    photoURL: PropTypes.string.isRequired,
+  }),
+};
+ThreadCard.defaultProps = {
+  user: { displayName: 'Anonymous', photoURL: '' },
 };
 
 export default ThreadCard;
