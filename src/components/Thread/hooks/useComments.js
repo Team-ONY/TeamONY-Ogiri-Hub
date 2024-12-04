@@ -1,4 +1,3 @@
-// hooks/useComments.js
 import { useState, useCallback, useEffect } from 'react';
 import { Timestamp } from 'firebase/firestore';
 import {
@@ -19,7 +18,7 @@ export const useComments = (threadId, thread, setThread, currentUser) => {
     if (thread?.comments) {
       const sortedComments = [...thread.comments].sort(
         (a, b) =>
-          a.createdAt.toDate().getTime() - b.createdAt.toDate().getTime()
+          b.createdAt.toDate().getTime() - a.createdAt.toDate().getTime()
       );
 
       const initialComments = sortedComments.slice(0, 20).map((comment) => ({
@@ -64,21 +63,23 @@ export const useComments = (threadId, thread, setThread, currentUser) => {
         );
 
         setDisplayedComments((prev) => {
-          const updated = [...prev, newComment];
-          return updated.sort(
-            (a, b) =>
-              a.createdAt.toDate().getTime() - b.createdAt.toDate().getTime()
-          );
+          const updated = [newComment, ...prev];
+          return updated;
         });
 
         setIsNewCommentAdded(true);
         setError('');
+
+        setThread((prevThread) => ({
+          ...prevThread,
+          comments: [newComment, ...(prevThread.comments || [])],
+        }));
       } catch (error) {
         console.error('Error adding comment:', error);
-        setError('コメントの追加に失敗しました');
+        setError('コメントの追加中にエラーが発生しました。');
       }
     },
-    [threadId, thread, currentUser]
+    [threadId, thread, currentUser, setThread]
   );
 
   const handleDeleteComment = useCallback(
@@ -86,17 +87,19 @@ export const useComments = (threadId, thread, setThread, currentUser) => {
       try {
         await deleteCommentFromThread(threadId, commentId);
 
-        setThread((prevThread) => ({
-          ...prevThread,
-          comments: prevThread.comments.filter((c) => c.id !== commentId),
-        }));
-
         setDisplayedComments((prev) =>
           prev.filter((comment) => comment.id !== commentId)
         );
+
+        setThread((prevThread) => ({
+          ...prevThread,
+          comments: (prevThread.comments || []).filter(
+            (comment) => comment.id !== commentId
+          ),
+        }));
       } catch (error) {
         console.error('Error deleting comment:', error);
-        setError('コメントの削除に失敗しました');
+        setError('コメントの削除中にエラーが発生しました。');
       }
     },
     [threadId, setThread]
@@ -111,7 +114,6 @@ export const useComments = (threadId, thread, setThread, currentUser) => {
     setIsLoadingComments,
     error,
     isNewCommentAdded,
-    setIsNewCommentAdded,
     handleAddComment,
     handleDeleteComment,
   };

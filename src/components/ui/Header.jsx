@@ -19,10 +19,10 @@ function Header({ isDesktop, toggleSidebar }) {
   const navigate = useNavigate();
   const user = auth.currentUser;
 
-  // レスポンシブなフォントサイズの設定
-  const logoFontSize = useBreakpointValue({ base: 'lg', md: 'xl' });
-  const iconSize = useBreakpointValue({ base: 5, md: 6 });
-  const bellIconSize = useBreakpointValue({ base: 6, md: 8 });
+  // レスポンシブなサイズ設定を更新
+  const logoFontSize = useBreakpointValue({ base: 'lg', md: 'xl', lg: '2xl' });
+  const iconSize = useBreakpointValue({ base: 5, md: 6, lg: 7 });
+  const bellIconSize = useBreakpointValue({ base: 6, md: 8, lg: 9 });
 
   const handleAvatarClick = () => {
     navigate('/profile');
@@ -64,25 +64,27 @@ function Header({ isDesktop, toggleSidebar }) {
 
       <Flex
         h="100%"
-        px={{ base: 2, md: 4 }}
         alignItems="center"
         justifyContent="space-between"
         maxWidth="container.xl"
         mx="auto"
+        width="100%"
       >
-        {/* 以下、既存のコード */}
-        <Flex alignItems="center">
+        <Flex
+          alignItems="center"
+          position="absolute" // 位置を絶対値に
+          left={{ base: 4, md: 8, lg: 12 }} // 左端からの距離を設定
+        >
           {!isDesktop && (
             <IconButton
               icon={<HamburgerIcon boxSize={iconSize} />}
               onClick={toggleSidebar}
               variant="ghost"
               color="pink.400"
-              mr={2}
-              size={{ base: 'xs', md: 'sm' }}
+              mr={{ base: 3, md: 4, lg: 5 }}
+              size={{ base: 'xs', md: 'sm', lg: 'md' }}
             />
           )}
-
           <Text
             onClick={handleLogoClick}
             bgGradient="linear(to-r, pink.400, purple.500)"
@@ -96,7 +98,13 @@ function Header({ isDesktop, toggleSidebar }) {
           </Text>
         </Flex>
 
-        <Flex align="center" gap={{ base: 1, md: 2 }} alignItems="center">
+        <Flex
+          align="center"
+          gap={{ base: 2, md: 3, lg: 4 }}
+          alignItems="center"
+          position="absolute" // 位置を絶対値に
+          right={{ base: 4, md: 8, lg: 12 }} // 右端からの距離を設定
+        >
           <IconButton
             icon={<BellIcon boxSize={bellIconSize} color="pink.400" />}
             variant="ghost"
@@ -106,8 +114,7 @@ function Header({ isDesktop, toggleSidebar }) {
               bg: 'whiteAlpha.200',
               color: 'purple.500',
             }}
-            size={{ base: 'xs', md: 'sm' }}
-            mr={{ base: 1, md: 2 }}
+            size={{ base: 'xs', md: 'sm', lg: 'md' }}
           />
           <Avatar
             size={{ base: 'xs', md: 'sm' }}

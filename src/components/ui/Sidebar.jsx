@@ -20,6 +20,7 @@ import LogoutIcon from '../../Icons/LogoutIcon';
 import PlusIcon from '../../Icons/PlusIcon';
 
 const MotionFlex = motion(Flex);
+const MotionBox = motion(Box);
 
 function Sidebar({ isOpen, toggleSidebar }) {
   const user = auth.currentUser;
@@ -77,14 +78,17 @@ function Sidebar({ isOpen, toggleSidebar }) {
 
   return (
     <>
-      <Box
+      <MotionBox
+        initial={{ x: '-100%' }}
+        animate={{ x: isOpen || window.innerWidth >= 768 ? '0%' : '-100%' }}
+        transition={{ duration: 0.3, ease: 'easeInOut' }}
         width="250px"
         height="100vh"
         bg="black"
         position="fixed"
         left="0"
         top={{ base: '50px', md: '60px' }}
-        display={{ base: isOpen ? 'flex' : 'none', md: 'flex' }}
+        display="flex"
         flexDirection="column"
         zIndex="1000"
         borderRight="1px solid rgba(255, 25, 136, 0.1)"
@@ -208,7 +212,7 @@ function Sidebar({ isOpen, toggleSidebar }) {
             </Text>
           </MotionFlex>
         </Box>
-      </Box>
+      </MotionBox>
 
       <CreateThreadModal isOpen={isCreateThreadModalOpen} onClose={onClose} />
     </>

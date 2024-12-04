@@ -74,7 +74,7 @@ const FormSection = ({ icon, label, children }) => (
   </Box>
 );
 
-const CreateThreadModal = ({ isOpen, onClose }) => {
+const CreateThreadModal = ({ isOpen, onClose, onThreadCreated }) => {
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [tags, setTags] = useState([]);
@@ -95,6 +95,7 @@ const CreateThreadModal = ({ isOpen, onClose }) => {
 
     try {
       await createThread(title, content, tags, attachments);
+      await onThreadCreated();
       toast({
         title: '作成完了',
         description: 'スレッドが作成されました。',
@@ -191,7 +192,8 @@ const CreateThreadModal = ({ isOpen, onClose }) => {
             color="white"
             size={{ base: 'lg', md: 'xl' }}
             height={{ base: '50px', md: '60px' }}
-            fontSize={{ base: 'md', md: 'lg' }}
+            width={{ base: '100%', md: '250px' }}
+            fontSize={{ base: 'lg', md: 'xl' }}
             borderRadius="xl"
             _hover={{
               transform: 'translateY(-2px)',
@@ -266,6 +268,7 @@ const FileUploadBox = ({ setAttachments }) => (
 CreateThreadModal.propTypes = {
   isOpen: PropTypes.bool.isRequired,
   onClose: PropTypes.func.isRequired,
+  onThreadCreated: PropTypes.func.isRequired,
 };
 
 FormSection.propTypes = {

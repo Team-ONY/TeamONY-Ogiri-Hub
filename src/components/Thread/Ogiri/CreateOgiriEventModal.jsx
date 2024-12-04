@@ -19,10 +19,13 @@ import {
   Radio,
   HStack,
   Image,
+  Spinner,
+  Center,
 } from '@chakra-ui/react';
 import { motion } from 'framer-motion';
 import { FiEdit3, FiClock, FiUsers, FiSend, FiImage } from 'react-icons/fi';
 import PropTypes from 'prop-types';
+import { generateImage } from '../../../services/api';
 
 const MotionBox = motion(Box);
 const MotionInput = motion(Input);
@@ -34,8 +37,12 @@ const CreateOgiriEventModal = ({ isOpen, onClose }) => {
   const [duration, setDuration] = useState('');
   const [maxResponses, setMaxResponses] = useState('');
   const [odaiType, setOdaiType] = useState('text'); // 'text' or 'image'
-  const [generatedImage, setGeneratedImage] = useState(null);
   const [imagePrompt, setImagePrompt] = useState('');
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [generatedImages, setGeneratedImages] = useState([]);
+  const [selectedImage, setSelectedImage] = useState(null);
+  const [error, setError] = useState('');
+  const [lastGeneratedTime, setLastGeneratedTime] = useState(0);
 
   const handleCreateEvent = async () => {
     console.log('イベント作成:', {
@@ -46,12 +53,44 @@ const CreateOgiriEventModal = ({ isOpen, onClose }) => {
     onClose();
   };
 
-  // AI画像生成の処理（実際のAPIと連携する必要があります）
+  // AI画像生成の処理
   const handleGenerateImage = async () => {
-    // ここでAI画像生成APIを呼び出す
-    console.log('画像を生成:', imagePrompt);
-    // 仮の実装として、ダミー画像のURLをセット
-    setGeneratedImage('https://via.placeholder.com/400x300');
+    if (!imagePrompt.trim()) {
+      setError('プロンプトを入力してください');
+      return;
+    }
+
+    // 生成回数の制限
+    if (generatedImages.length >= 3) {
+      setError('画像生成は3回までです');
+      return;
+    }
+
+    // 最後の生成から3秒以上経過していることを確認
+    const now = Date.now();
+    if (now - lastGeneratedTime < 3000) {
+      setError('画像生成の間隔を空けてください');
+      return;
+    }
+
+    try {
+      setIsGenerating(true);
+      setError('');
+
+      const imageUrl = await generateImage(imagePrompt);
+
+      setGeneratedImages((prevImages) => [...prevImages, imageUrl]);
+      setSelectedImage(imageUrl);
+      setLastGeneratedTime(Date.now());
+    } catch (error) {
+      console.error('画像生成エラー:', error);
+      setError(
+        error.message ||
+          '画像の生成に失敗しました。しばらく待ってから再度お試しください。'
+      );
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   return (
@@ -151,7 +190,7 @@ const CreateOgiriEventModal = ({ isOpen, onClose }) => {
                   <Icon as={FiEdit3} /> テキストお題
                 </FormLabel>
                 <MotionInput
-                  placeholder="面白いお題を入力してください"
+                  placeholder="面白いおを入力してくさい"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   bg="blackAlpha.400"
@@ -179,7 +218,7 @@ const CreateOgiriEventModal = ({ isOpen, onClose }) => {
                 <FormLabel color="white">
                   <Icon as={FiImage} /> AI画像生成
                 </FormLabel>
-                <VStack spacing={4}>
+                <VStack spacing={4} align="stretch">
                   <MotionInput
                     placeholder="画像生成のプロンプトを入力してください"
                     value={imagePrompt}
@@ -203,22 +242,86 @@ const CreateOgiriEventModal = ({ isOpen, onClose }) => {
                     }}
                     transition="all 0.3s ease"
                   />
-                  <Button
-                    onClick={handleGenerateImage}
-                    colorScheme="purple"
-                    leftIcon={<Icon as={FiImage} />}
-                  >
-                    画像を生成
-                  </Button>
-                  {generatedImage && (
+                  {!isGenerating && (
+                    <Button
+                      onClick={handleGenerateImage}
+                      colorScheme="purple"
+                      leftIcon={<Icon as={FiImage} />}
+                      isDisabled={generatedImages.length >= 3}
+                    >
+                      画像を生成 ({generatedImages.length}/3)
+                    </Button>
+                  )}
+
+                  {isGenerating && (
+                    <Center p={8}>
+                      <VStack spacing={4}>
+                        <Spinner
+                          thickness="4px"
+                          speed="0.65s"
+                          emptyColor="gray.200"
+                          color="purple.500"
+                          size="xl"
+                        />
+                        <Text color="whiteAlpha.800">
+                          AIが画像を生成中です...
+                        </Text>
+                      </VStack>
+                    </Center>
+                  )}
+
+                  {selectedImage && (
                     <Box
                       borderRadius="xl"
                       overflow="hidden"
                       border="2px solid"
                       borderColor="whiteAlpha.200"
+                      mb={4}
                     >
-                      <Image src={generatedImage} alt="Generated image" />
+                      <Image
+                        src={selectedImage}
+                        alt="Selected image"
+                        width="100%"
+                        height="auto"
+                        maxH="400px"
+                        objectFit="contain"
+                      />
                     </Box>
+                  )}
+
+                  {generatedImages.length > 0 && (
+                    <HStack spacing={4} justify="center">
+                      {generatedImages.map((image, index) => (
+                        <Box
+                          key={index}
+                          cursor="pointer"
+                          onClick={() => setSelectedImage(image)}
+                          borderRadius="xl"
+                          overflow="hidden"
+                          border="2px solid"
+                          borderColor={
+                            selectedImage === image
+                              ? 'pink.400'
+                              : 'whiteAlpha.200'
+                          }
+                          width="100px"
+                          height="100px"
+                          transition="all 0.2s"
+                          _hover={{
+                            borderColor: 'pink.400',
+                            transform: 'scale(1.05)',
+                          }}
+                        >
+                          <Image
+                            src={image}
+                            alt={`Generated image ${index + 1}`}
+                            width="100%"
+                            height="100%"
+                            objectFit="cover"
+                          />
+                        </Box>
+                      ))}
+                    </HStack>
                   )}
                 </VStack>
               </MotionBox>
@@ -301,6 +404,12 @@ const CreateOgiriEventModal = ({ isOpen, onClose }) => {
                 transition="all 0.3s ease"
               />
             </MotionBox>
+
+            {error && (
+              <Text color="red.500" fontSize="sm" mt={2}>
+                {error}
+              </Text>
+            )}
           </VStack>
         </ModalBody>
         <ModalFooter px={8} pb={8} gap={4}>
