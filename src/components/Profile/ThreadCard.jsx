@@ -4,18 +4,17 @@ import { PropTypes } from 'prop-types';
 
 const MotionBox = motion(Box);
 
-const ThreadCard = ({ threads , user }) => (
-
+const ThreadCard = ({ threads, user }) => (
   <MotionBox
-  initial={{ opacity: 0, y: 20 }}
-  animate={{ opacity: 1, y: 0 }}
-  mb={6}
-  bg="rgba(255, 255, 255, 0.05)"
-  borderRadius="xl"
-  p={6}
-  backdropFilter="blur(10px)"
-  boxShadow="0 4px 30px rgba(0, 0, 0, 0.1)"
-  border="1px solid rgba(255, 255, 255, 0.1)"
+    initial={{ opacity: 0, y: 20 }}
+    animate={{ opacity: 1, y: 0 }}
+    mb={6}
+    bg="rgba(255, 255, 255, 0.05)"
+    borderRadius="xl"
+    p={6}
+    backdropFilter="blur(10px)"
+    boxShadow="0 4px 30px rgba(0, 0, 0, 0.1)"
+    border="1px solid rgba(255, 255, 255, 0.1)"
     maxH="400px" // カードの最大高さを指定
     overflowY="auto" // 縦スクロールを有効化
   >
@@ -25,7 +24,7 @@ const ThreadCard = ({ threads , user }) => (
         <Avatar
           size="md" //ここで名前とアイコン表示中
           name={user ? user.displayName : 'Anonymous'}
-          src={user?.photoURL || 'defaultPhotoURL'}    
+          src={user?.photoURL || 'defaultPhotoURL'}
           border="2px solid"
           borderColor="purple.500"
         />
@@ -73,7 +72,8 @@ const ThreadCard = ({ threads , user }) => (
 
 ThreadCard.propTypes = {
   threads: PropTypes.arrayOf(
-    PropTypes.shape({     
+    PropTypes.shape({
+      user: PropTypes.object.isRequired,
       id: PropTypes.string.isRequired,
       title: PropTypes.string.isRequired,
       coment: PropTypes.string,

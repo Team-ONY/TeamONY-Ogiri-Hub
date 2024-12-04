@@ -50,7 +50,9 @@ const UserInfoCard = ({ user }) => (
       >
         {user?.displayName}
       </Text>
-      <Text color="whiteAlpha.600">@{user?.email?.substr(0 , user?.email?.indexOf('@'))}</Text>
+      <Text color="whiteAlpha.600">
+        @{user?.email?.substr(0, user?.email?.indexOf('@'))}
+      </Text>
     </VStack>
   </MotionBox>
 );
