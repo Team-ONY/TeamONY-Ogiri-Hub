@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Masonry from 'react-masonry-css';
-import { Box } from '@chakra-ui/react';
+// eslint-disable-next-line no-unused-vars
 import { SimpleGrid, Box, Text } from '@chakra-ui/react';
 // eslint-disable-next-line no-unused-vars
 import { motion } from 'framer-motion';
@@ -19,7 +19,7 @@ import UserInfoCard from './UserInfoCard';
 import StatCard from './StatCard';
 import AchievementCard from './AchievementCard';
 import HallOfFameCard from './HallOfFameCard';
-import ThreadCard from './ThreadCard';  //追加部分
+import ThreadCard from './ThreadCard'; //追加部分
 import '../Profile/ProfileMasonry.css';
 
 //const MotionBox = motion(Box);
@@ -60,7 +60,8 @@ const ProfileMasonry = () => {
     { id: 6, name: '完璧な回答', icon: CheckBadgeIcon },
   ];
 
-  useEffect(() => {     //auth.onAuthStateChangedを使ってログインしているユーザー情報を取得
+  useEffect(() => {
+    //auth.onAuthStateChangedを使ってログインしているユーザー情報を取得
     const unsubscribe = auth.onAuthStateChanged((currentUser) => {
       setUser(currentUser);
       if (currentUser) {
@@ -81,9 +82,9 @@ const ProfileMasonry = () => {
       // 自分の立てたスレッドを取得するクエリ(データベースに問い合わせる)
       const threadsQuery = query(
         collection(db, 'threads'), // スレッドコレクション
-        where('createdBy', '==', uid), // ログインユーザーのスレッドを取得
+        where('createdBy', '==', uid) // ログインユーザーのスレッドを取得
         /*orderBy('createdAt', 'desc') // 新しい順で並び替え*/
-      );      
+      );
       //----追加部分終了----
 
       // Stats取得
@@ -109,13 +110,13 @@ const ProfileMasonry = () => {
       );
 
       const [
-        threadsSnapshot,  //追加部分
+        threadsSnapshot, //追加部分
         postsSnapshot,
         hallOfFameSnapshot,
         streakSnapshot,
         achievementsSnapshot,
       ] = await Promise.all([
-        getDocs(threadsQuery),  //追加部分
+        getDocs(threadsQuery), //追加部分
         getDocs(postsQuery),
         getDocs(hallOfFameQuery),
         getDocs(streakQuery),
@@ -143,10 +144,11 @@ const ProfileMasonry = () => {
       );
 
       //----追加部分----
-      setUserThreads(       //mapメソッド
+      setUserThreads(
+        //mapメソッド
         threadsSnapshot.docs.map((doc) => ({
           id: doc.id,
-          ...doc.data(),  //スプレッド構文
+          ...doc.data(), //スプレッド構文
         }))
       );
       //----追加部分終了----
@@ -179,9 +181,9 @@ const ProfileMasonry = () => {
         {hallOfFamePosts.map((post) => (
           <HallOfFameCard key={post.id} post={post} />
         ))}
-      {/*----スレッドを表示させる(追加部分)----*/}
-      <ThreadCard threads={userThreads} user={user}/>
-      {/*----追加部分終了----*/}                               
+        {/*----スレッドを表示させる(追加部分)----*/}
+        <ThreadCard threads={userThreads} user={user} />
+        {/*----追加部分終了----*/}
       </Masonry>
     </Box>
   );
