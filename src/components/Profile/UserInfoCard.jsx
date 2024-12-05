@@ -16,7 +16,7 @@ import {
 } from '@chakra-ui/react';
 import { HiPencil } from 'react-icons/hi';
 import { motion } from 'framer-motion';
-import PropTypes from 'prop-types';
+import {PropTypes} from 'prop-types';
 
 const MotionBox = motion(Box);
 
