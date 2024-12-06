@@ -97,7 +97,7 @@ function Thread() {
                 bgClip="text"
                 textShadow="0 0 20px rgba(236, 72, 153, 0.3)"
               >
-                THREAD
+                OGIRI THREAD
               </Heading>
             </Flex>
 

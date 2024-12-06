@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import { VStack, Box, Flex, Spinner, Text } from '@chakra-ui/react';
+import { VStack, Box, Flex, Spinner, Text, Center } from '@chakra-ui/react';
 import { auth } from '../../config/firebase';
 import { useThreadData } from './hooks/useThreadData';
 import { useComments } from './hooks/useComments';
@@ -10,6 +10,15 @@ import { ParticipantsList } from './ParticipantsList';
 import { useAlert } from '../../hooks/useAlert';
 import CreateOgiriButton from './Ogiri/CreateOgiriButton';
 import CreateOgiriEventModal from './Ogiri/CreateOgiriEventModal';
+import OgiriEvent from './Ogiri/OgiriEvent';
+import {
+  createOgiriEvent,
+  getOgiriEvents,
+  joinOgiriEvent,
+  leaveOgiriEvent,
+} from '../../services/ogiriService';
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from '../../config/firebase';
 
 function ThreadDetail() {
   const { id } = useParams();
@@ -19,9 +28,8 @@ function ThreadDetail() {
   const { showAlert } = useAlert();
   const currentUser = auth.currentUser;
   const [isModalOpen, setIsModalOpen] = useState(false);
-
-  const handleOpenModal = () => setIsModalOpen(true);
-  const handleCloseModal = () => setIsModalOpen(false);
+  const [ogiriEvents, setOgiriEvents] = useState([]);
+  const [loadingEvents, setLoadingEvents] = useState(true);
 
   // ViewType の設定
   const currentViewType = location.pathname.includes('/admin/')
@@ -132,6 +140,153 @@ function ThreadDetail() {
     navigate(`/admin/${id}`);
   };
 
+  const handleCreateEvent = async (newEvent) => {
+    if (newEvent && currentUser) {
+      try {
+        const eventData = {
+          ...newEvent,
+          createdAt: new Date(),
+          createdBy: currentUser.uid,
+        };
+
+        const createdEvent = await createOgiriEvent(
+          id,
+          eventData,
+          currentUser.uid
+        );
+
+        const processedEvent = {
+          ...createdEvent,
+          createdAt:
+            createdEvent.createdAt?.toDate?.() ||
+            new Date(createdEvent.createdAt),
+        };
+
+        setOgiriEvents((prev) => [...prev, processedEvent]);
+        setIsModalOpen(false);
+        showAlert('大喜利イベントを作成しました', 'success');
+      } catch (error) {
+        console.error('Error creating ogiri event:', error);
+        showAlert('大喜利イベントの作成に失敗しました', 'error');
+      }
+    }
+  };
+
+  const handleJoinEvent = async (eventId) => {
+    if (!currentUser) {
+      showAlert('ログインが必要です', 'error');
+      return;
+    }
+
+    const event = ogiriEvents.find((e) => e.id === eventId);
+    if (!event) return;
+
+    const isParticipating = event.participants?.includes(currentUser.uid);
+
+    try {
+      if (isParticipating) {
+        await leaveOgiriEvent(id, eventId, currentUser.uid);
+
+        setOgiriEvents((prev) =>
+          prev.map((event) => {
+            if (event.id === eventId) {
+              return {
+                ...event,
+                participants: event.participants.filter(
+                  (id) => id !== currentUser.uid
+                ),
+              };
+            }
+            return event;
+          })
+        );
+
+        showAlert('大喜利イベントから退出しました', 'info');
+      } else {
+        await joinOgiriEvent(id, eventId, currentUser.uid);
+
+        setOgiriEvents((prev) =>
+          prev.map((event) => {
+            if (event.id === eventId) {
+              return {
+                ...event,
+                participants: [...(event.participants || []), currentUser.uid],
+              };
+            }
+            return event;
+          })
+        );
+
+        showAlert('大喜利イベントに参加しました', 'success');
+      }
+    } catch (error) {
+      console.error('Error toggling event participation:', error);
+      showAlert('操作に失敗しました', 'error');
+    }
+  };
+
+  // イベントの作成者情報を取得する関数を追加
+  const getEventCreator = async (userId) => {
+    try {
+      const userRef = doc(db, 'users', userId);
+      const userDoc = await getDoc(userRef);
+      if (userDoc.exists()) {
+        return {
+          uid: userId,
+          ...userDoc.data(),
+        };
+      }
+      return null;
+    } catch (error) {
+      console.error('Error fetching event creator:', error);
+      return null;
+    }
+  };
+
+  // 大喜利イベントの取得
+  useEffect(() => {
+    const fetchOgiriEvents = async () => {
+      if (!id) return;
+
+      try {
+        setLoadingEvents(true);
+        const events = await getOgiriEvents(id);
+
+        // 各イベントの作成者情報を取得
+        const processedEvents = await Promise.all(
+          events.map(async (event) => {
+            let creator = null;
+            if (event.createdBy) {
+              creator = await getEventCreator(event.createdBy);
+            }
+            // creatorが取得できなかった場合のフォールバック
+            if (!creator) {
+              creator = {
+                uid: event.createdBy,
+                username: '不明なユーザー',
+                photoURL: null,
+              };
+            }
+            return {
+              ...event,
+              createdAt:
+                event.createdAt?.toDate?.() || new Date(event.createdAt),
+              creator: creator,
+            };
+          })
+        );
+
+        setOgiriEvents(processedEvents);
+      } catch (error) {
+        console.error('Error fetching ogiri events:', error);
+      } finally {
+        setLoadingEvents(false);
+      }
+    };
+
+    fetchOgiriEvents();
+  }, [id]);
+
   if (loadingThread) {
     return (
       <Flex justify="center" align="center" height="100vh">
@@ -174,6 +329,21 @@ function ThreadDetail() {
             onSubmit={handleAddComment}
             error={error}
           />
+          {loadingEvents ? (
+            <Center p={8}>
+              <Spinner size="xl" color="pink.400" />
+            </Center>
+          ) : (
+            ogiriEvents.map((event) => (
+              <OgiriEvent
+                key={event.id}
+                event={{ ...event, threadId: id }}
+                creator={event.creator}
+                onJoinEvent={() => handleJoinEvent(event.id)}
+                currentUser={currentUser}
+              />
+            ))
+          )}
           <CommentSection
             comments={displayedComments}
             isLoading={isLoadingComments}
@@ -183,10 +353,16 @@ function ThreadDetail() {
             thread={thread}
             onLoadMore={loadMoreComments}
           />
-          <CreateOgiriButton onOpen={handleOpenModal} />
+          <CreateOgiriButton onOpen={() => setIsModalOpen(true)} />
           <CreateOgiriEventModal
             isOpen={isModalOpen}
-            onClose={handleCloseModal}
+            onClose={(newEvent) => {
+              if (newEvent) {
+                handleCreateEvent(newEvent);
+              } else {
+                setIsModalOpen(false);
+              }
+            }}
           />
           <Box ref={commentsEndRef} />
         </VStack>
