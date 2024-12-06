@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Masonry from 'react-masonry-css';
-import { Box } from '@chakra-ui/react';
+// eslint-disable-next-line no-unused-vars
+import { SimpleGrid, Box, Text } from '@chakra-ui/react';
 // eslint-disable-next-line no-unused-vars
 import { motion } from 'framer-motion';
 import { auth, db } from '../../config/firebase';
@@ -18,6 +19,7 @@ import UserInfoCard from './UserInfoCard';
 import StatCard from './StatCard';
 import AchievementCard from './AchievementCard';
 import HallOfFameCard from './HallOfFameCard';
+import ThreadCard from './ThreadCard'; //追加部分
 import '../Profile/ProfileMasonry.css';
 
 //const MotionBox = motion(Box);
@@ -35,6 +37,7 @@ const ProfileMasonry = () => {
   // eslint-disable-next-line no-unused-vars
   const [achievements, setAchievements] = useState([]);
   const [hallOfFamePosts, setHallOfFamePosts] = useState([]);
+  const [userThreads, setUserThreads] = useState([]); //追加部分
 
   const breakpointColumns = {
     default: 3,
@@ -58,11 +61,13 @@ const ProfileMasonry = () => {
   ];
 
   useEffect(() => {
+    //auth.onAuthStateChangedを使ってログインしているユーザー情報を取得
     const unsubscribe = auth.onAuthStateChanged((currentUser) => {
       setUser(currentUser);
       if (currentUser) {
         fetchUserData(currentUser.uid);
       } else {
+        //未ログインの時はログイン画面にリダイレクト
         setLoading(false);
         navigate('/login');
       }
@@ -73,6 +78,15 @@ const ProfileMasonry = () => {
 
   const fetchUserData = async (uid) => {
     try {
+      //----追加部分----
+      // 自分の立てたスレッドを取得するクエリ(データベースに問い合わせる)
+      const threadsQuery = query(
+        collection(db, 'threads'), // スレッドコレクション
+        where('createdBy', '==', uid) // ログインユーザーのスレッドを取得
+        /*orderBy('createdAt', 'desc') // 新しい順で並び替え*/
+      );
+      //----追加部分終了----
+
       // Stats取得
       const postsQuery = query(
         collection(db, 'posts'),
@@ -96,11 +110,13 @@ const ProfileMasonry = () => {
       );
 
       const [
+        threadsSnapshot, //追加部分
         postsSnapshot,
         hallOfFameSnapshot,
         streakSnapshot,
         achievementsSnapshot,
       ] = await Promise.all([
+        getDocs(threadsQuery), //追加部分
         getDocs(postsQuery),
         getDocs(hallOfFameQuery),
         getDocs(streakQuery),
@@ -126,6 +142,16 @@ const ProfileMasonry = () => {
           ...doc.data(),
         }))
       );
+
+      //----追加部分----
+      setUserThreads(
+        //mapメソッド
+        threadsSnapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(), //スプレッド構文
+        }))
+      );
+      //----追加部分終了----
 
       setLoading(false);
     } catch (error) {
@@ -155,6 +181,9 @@ const ProfileMasonry = () => {
         {hallOfFamePosts.map((post) => (
           <HallOfFameCard key={post.id} post={post} />
         ))}
+        {/*----スレッドを表示させる(追加部分)----*/}
+        <ThreadCard threads={userThreads} user={user} />
+        {/*----追加部分終了----*/}
       </Masonry>
     </Box>
   );
