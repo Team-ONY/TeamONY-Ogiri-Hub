@@ -234,52 +234,48 @@ function ThreadDetail() {
     const eventsRef = collection(db, 'threads', id, 'ogiriEvents');
     const q = query(eventsRef, orderBy('createdAt', 'desc'));
 
-    const unsubscribe = onSnapshot(
-      q,
-      async (snapshot) => {
-        try {
-          const eventsData = await Promise.all(
-            snapshot.docs.map(async (docSnapshot) => {
-              // docをdocSnapshotに変更
-              const eventData = docSnapshot.data();
-              let creator = null;
-              if (eventData.createdBy) {
-                const userRef = doc(db, 'users', eventData.createdBy); // docをインポートした関数として使用
-                const userDoc = await getDoc(userRef);
-                if (userDoc.exists()) {
-                  creator = {
-                    uid: eventData.createdBy,
-                    ...userDoc.data(),
-                  };
-                }
-              }
-              return {
-                id: docSnapshot.id, // docをdocSnapshotに変更
-                ...eventData,
-                createdAt:
-                  eventData.createdAt?.toDate?.() ||
-                  new Date(eventData.createdAt),
-                creator: creator || {
+    const unsubscribe = onSnapshot(q, async (snapshot) => {
+      try {
+        const eventsData = await Promise.all(
+          snapshot.docs.map(async (docSnapshot) => {
+            const eventData = docSnapshot.data();
+            let creator = null;
+
+            if (eventData.createdBy) {
+              // ユーザー情報の取得
+              const userRef = doc(db, 'users', eventData.createdBy);
+              const userSnap = await getDoc(userRef);
+              if (userSnap.exists()) {
+                creator = {
                   uid: eventData.createdBy,
-                  username: '不明なユーザー',
-                  photoURL: null,
-                },
-              };
-            })
-          );
-          setOgiriEvents(eventsData);
-          setLoadingEvents(false);
-        } catch (error) {
-          console.error('Error processing events:', error);
-          showAlert('イベントの処理中にエラーが発生しました', 'error');
-        }
-      },
-      (error) => {
-        console.error('Error listening to events:', error);
-        showAlert('イベントの監視中にエラーが発生しました', 'error');
+                  ...userSnap.data(),
+                };
+              }
+            }
+
+            return {
+              id: docSnapshot.id,
+              ...eventData,
+              createdAt:
+                eventData.createdAt?.toDate?.() ||
+                new Date(eventData.createdAt),
+              creator: creator || {
+                uid: eventData.createdBy,
+                username: '不明なユーザー',
+                photoURL: null,
+              },
+            };
+          })
+        );
+
+        setOgiriEvents(eventsData);
+        setLoadingEvents(false);
+      } catch (error) {
+        console.error('Error processing events:', error);
+        showAlert('イベントの処理中にエラーが発生しました', 'error');
         setLoadingEvents(false);
       }
-    );
+    });
 
     return () => unsubscribe();
   }, [id, showAlert]);

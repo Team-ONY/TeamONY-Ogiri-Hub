@@ -12,6 +12,7 @@ import {
   getDocs,
   getDoc,
   orderBy,
+  onSnapshot,
 } from 'firebase/firestore';
 
 // 大喜利イベントの作成
@@ -143,7 +144,7 @@ export const submitOgiriAnswer = async (
       userId
     );
     if (currentAnswerCount >= maxResponses) {
-      throw new Error(`回答数が上限（${maxResponses}回）に達しています`);
+      throw new Error(`回答��が上限（${maxResponses}回）に達しています`);
     }
 
     const eventRef = doc(db, 'threads', threadId, 'ogiriEvents', eventId);
@@ -168,17 +169,24 @@ export const submitOgiriAnswer = async (
 // 回答を取得
 export const getOgiriAnswers = async (threadId, eventId) => {
   try {
-    const eventRef = doc(db, 'threads', threadId, 'ogiriEvents', eventId);
-    const answersRef = collection(eventRef, 'answers');
+    const answersRef = collection(
+      db,
+      'threads',
+      threadId,
+      'ogiriEvents',
+      eventId,
+      'answers'
+    );
     const q = query(answersRef, orderBy('createdAt', 'desc'));
-
     const snapshot = await getDocs(q);
+
     return snapshot.docs.map((doc) => ({
       id: doc.id,
       ...doc.data(),
+      createdAt: doc.data().createdAt?.toDate() || new Date(),
     }));
   } catch (error) {
-    console.error('Error getting answers:', error);
+    console.error('Error fetching ogiri answers:', error);
     throw error;
   }
 };
@@ -292,7 +300,7 @@ export const getBestAnswer = async (threadId, eventId) => {
   }
 };
 
-// いいねの数に基づいてベストアンサーを自動選定
+// いいねの数に基づいてベスアンサーを自動選定
 export const determineAndSetBestAnswer = async (threadId, eventId) => {
   try {
     const eventRef = doc(db, 'threads', threadId, 'ogiriEvents', eventId);
@@ -338,4 +346,40 @@ export const checkEventExpirationAndSetBestAnswer = async (event) => {
   }
 
   return isExpired;
+};
+
+// リアルタイムリスナー用の関数を追加
+export const subscribeToOgiriAnswers = (threadId, eventId, callback) => {
+  const answersRef = collection(
+    db,
+    'threads',
+    threadId,
+    'ogiriEvents',
+    eventId,
+    'answers'
+  );
+  const q = query(answersRef, orderBy('createdAt', 'desc'));
+
+  return onSnapshot(q, (snapshot) => {
+    const answers = snapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+      createdAt: doc.data().createdAt?.toDate() || new Date(),
+    }));
+    callback(answers);
+  });
+};
+
+export const subscribeToOgiriEvent = (threadId, eventId, callback) => {
+  const eventRef = doc(db, 'threads', threadId, 'ogiriEvents', eventId);
+
+  return onSnapshot(eventRef, (doc) => {
+    if (doc.exists()) {
+      callback({
+        id: doc.id,
+        ...doc.data(),
+        createdAt: doc.data().createdAt?.toDate() || new Date(),
+      });
+    }
+  });
 };
