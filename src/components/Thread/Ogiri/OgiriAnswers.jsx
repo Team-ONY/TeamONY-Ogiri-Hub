@@ -11,7 +11,9 @@ import {
 import { FiHeart, FiClock } from 'react-icons/fi';
 import { motion } from 'framer-motion';
 import PropTypes from 'prop-types';
-import { useMemo } from 'react';
+import { useState, useEffect } from 'react';
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from '../../../config/firebase';
 
 const MotionBox = motion(Box);
 
@@ -73,7 +75,7 @@ const OgiriAnswer = ({ answer, user, onLike, isLiked, isBestAnswer }) => {
           />
           <Box flex={1}>
             <Text fontWeight="bold" color="white" fontSize="md">
-              {user?.username}
+              {user?.username || '読み込み中...'}
             </Text>
             <HStack spacing={2} color="whiteAlpha.600" fontSize="xs">
               <FiClock />
@@ -106,7 +108,7 @@ const OgiriAnswer = ({ answer, user, onLike, isLiked, isBestAnswer }) => {
               ml={1}
               fontWeight="bold"
             >
-              {answer.likes}
+              {answer.likes || 0}
             </Text>
           </Flex>
         </HStack>
@@ -127,28 +129,52 @@ OgiriAnswer.propTypes = {
   isBestAnswer: PropTypes.bool.isRequired,
 };
 
-const OgiriAnswers = ({
-  answers,
-  usersDetails,
-  currentUser,
-  onLike,
-  bestAnswerId = null,
-}) => {
-  const sortedAnswers = useMemo(() => {
-    return [...answers].sort((a, b) => {
-      if (a.id === bestAnswerId) return -1;
-      if (b.id === bestAnswerId) return 1;
-      return 0;
-    });
-  }, [answers, bestAnswerId]);
+const OgiriAnswers = ({ answers, currentUser, onLike, bestAnswerId }) => {
+  const [usersDetails, setUsersDetails] = useState({});
+
+  useEffect(() => {
+    const fetchUsersDetails = async () => {
+      try {
+        const userIds = [...new Set(answers.map((answer) => answer.userId))];
+        const details = {};
+
+        await Promise.all(
+          userIds.map(async (userId) => {
+            const userRef = doc(db, 'users', userId);
+            const userSnap = await getDoc(userRef);
+            if (userSnap.exists()) {
+              details[userId] = {
+                uid: userId,
+                ...userSnap.data(),
+              };
+            }
+          })
+        );
+
+        setUsersDetails(details);
+      } catch (error) {
+        console.error('Error fetching users details:', error);
+      }
+    };
+
+    if (answers.length > 0) {
+      fetchUsersDetails();
+    }
+  }, [answers]);
 
   return (
     <VStack spacing={6} w="full" align="stretch" mt={6} px={2}>
-      {sortedAnswers.map((answer) => (
+      {answers.map((answer) => (
         <OgiriAnswer
           key={answer.id}
           answer={answer}
-          user={usersDetails[answer.userId]}
+          user={
+            usersDetails[answer.userId] || {
+              username: '読み込み中...',
+              photoURL: null,
+              uid: answer.userId,
+            }
+          }
           onLike={onLike}
           isLiked={answer.likedBy?.includes(currentUser?.uid)}
           isBestAnswer={answer.id === bestAnswerId}
@@ -160,7 +186,6 @@ const OgiriAnswers = ({
 
 OgiriAnswers.propTypes = {
   answers: PropTypes.array.isRequired,
-  usersDetails: PropTypes.object.isRequired,
   currentUser: PropTypes.object,
   onLike: PropTypes.func.isRequired,
   bestAnswerId: PropTypes.string,
@@ -169,6 +194,7 @@ OgiriAnswers.propTypes = {
 OgiriAnswers.defaultProps = {
   bestAnswerId: null,
   currentUser: null,
+  isExpired: false,
 };
 
 export default OgiriAnswers;
