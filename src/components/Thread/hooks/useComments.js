@@ -62,11 +62,6 @@ export const useComments = (threadId, thread, setThread, currentUser) => {
           photoURL
         );
 
-        setDisplayedComments((prev) => {
-          const updated = [newComment, ...prev];
-          return updated;
-        });
-
         setIsNewCommentAdded(true);
         setError('');
 
