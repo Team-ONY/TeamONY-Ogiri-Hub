@@ -21,6 +21,8 @@ import {
   Image,
   Spinner,
   Center,
+  FormControl,
+  FormHelperText,
 } from '@chakra-ui/react';
 import { motion } from 'framer-motion';
 import { FiEdit3, FiClock, FiUsers, FiSend, FiImage } from 'react-icons/fi';
@@ -45,12 +47,34 @@ const CreateOgiriEventModal = ({ isOpen, onClose }) => {
   const [lastGeneratedTime, setLastGeneratedTime] = useState(0);
 
   const handleCreateEvent = async () => {
-    console.log('イベント作成:', {
-      title,
-      duration,
-      maxResponses,
-    });
-    onClose();
+    // バリデーションを追加
+    if (!title && odaiType === 'text') {
+      setError('お題を入力してください');
+      return;
+    }
+    if (!selectedImage && odaiType === 'image') {
+      setError('画像を選択してください');
+      return;
+    }
+    if (!duration) {
+      setError('回答受付期間を入力してください');
+      return;
+    }
+    if (!maxResponses) {
+      setError('回答数を入力してください');
+      return;
+    }
+
+    const newEvent = {
+      title: odaiType === 'text' ? title : '',
+      selectedImage: odaiType === 'image' ? selectedImage : null,
+      duration: Number(duration),
+      maxResponses: Number(maxResponses),
+      odaiType,
+      status: 'active',
+    };
+
+    onClose(newEvent);
   };
 
   // AI画像生成の処理
@@ -367,42 +391,47 @@ const CreateOgiriEventModal = ({ isOpen, onClose }) => {
             </MotionBox>
 
             <MotionBox>
-              <FormLabel
-                color="whiteAlpha.900"
-                fontSize="md"
-                fontWeight="bold"
-                display="flex"
-                alignItems="center"
-                gap={2}
-                mb={3}
-              >
-                <Icon as={FiUsers} />
-                ユーザーごとの回答数
-              </FormLabel>
-              <MotionInput
-                type="number"
-                placeholder="最大回答数を入力してください"
-                value={maxResponses}
-                onChange={(e) => setMaxResponses(e.target.value)}
-                bg="blackAlpha.400"
-                color="white"
-                borderRadius="xl"
-                py={6}
-                px={6}
-                fontSize="lg"
-                border="2px solid"
-                borderColor="whiteAlpha.200"
-                _hover={{
-                  borderColor: 'pink.400',
-                  transform: 'translateY(-2px)',
-                }}
-                _focus={{
-                  borderColor: 'pink.400',
-                  boxShadow: '0 0 0 1px rgba(255, 25, 136, 0.3)',
-                  bg: 'blackAlpha.500',
-                }}
-                transition="all 0.3s ease"
-              />
+              <FormControl>
+                <FormLabel
+                  color="whiteAlpha.900"
+                  fontSize="md"
+                  fontWeight="bold"
+                  display="flex"
+                  alignItems="center"
+                  gap={2}
+                  mb={3}
+                >
+                  <Icon as={FiUsers} />
+                  一人あたりの回答制限
+                </FormLabel>
+                <MotionInput
+                  type="number"
+                  placeholder="一人あたりの回答制限を入力してください"
+                  value={maxResponses}
+                  onChange={(e) => setMaxResponses(e.target.value)}
+                  bg="blackAlpha.400"
+                  color="white"
+                  borderRadius="xl"
+                  py={6}
+                  px={6}
+                  fontSize="lg"
+                  border="2px solid"
+                  borderColor="whiteAlpha.200"
+                  _hover={{
+                    borderColor: 'pink.400',
+                    transform: 'translateY(-2px)',
+                  }}
+                  _focus={{
+                    borderColor: 'pink.400',
+                    boxShadow: '0 0 0 1px rgba(255, 25, 136, 0.3)',
+                    bg: 'blackAlpha.500',
+                  }}
+                  transition="all 0.3s ease"
+                />
+                <FormHelperText color="whiteAlpha.600">
+                  一人のユーザーが投稿できる回答の最大数
+                </FormHelperText>
+              </FormControl>
             </MotionBox>
 
             {error && (
