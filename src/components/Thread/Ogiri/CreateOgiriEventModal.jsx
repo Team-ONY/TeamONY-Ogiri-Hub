@@ -45,6 +45,18 @@ const CreateOgiriEventModal = ({ isOpen, onClose }) => {
   const [error, setError] = useState('');
   const [lastGeneratedTime, setLastGeneratedTime] = useState(0);
 
+  const resetModalState = () => {
+    setTitle('');
+    setDuration('');
+    setMaxResponses('');
+    setOdaiType('text');
+    setImagePrompt('');
+    setGeneratedImages([]);
+    setSelectedImage(null);
+    setError('');
+    setLastGeneratedTime(0);
+  };
+
   const handleCreateEvent = async () => {
     // バリデーションを追加
     if (!title && odaiType === 'text') {
@@ -74,6 +86,7 @@ const CreateOgiriEventModal = ({ isOpen, onClose }) => {
     };
 
     onClose(newEvent);
+    resetModalState();
   };
 
   // AI画像生成の処理
@@ -116,8 +129,13 @@ const CreateOgiriEventModal = ({ isOpen, onClose }) => {
     }
   };
 
+  const handleClose = () => {
+    onClose();
+    resetModalState();
+  };
+
   return (
-    <Modal isOpen={isOpen} onClose={onClose} size="2xl">
+    <Modal isOpen={isOpen} onClose={handleClose} size="2xl">
       <ModalOverlay backdropFilter="blur(10px)" />
       <MotionModalContent
         bg="linear-gradient(170deg, rgba(18, 18, 18, 0.95) 0%, rgba(30, 30, 30, 0.95) 100%)"
@@ -147,12 +165,13 @@ const CreateOgiriEventModal = ({ isOpen, onClose }) => {
               大喜利イベントの作成
             </Heading>
             <Text color="whiteAlpha.700" fontSize="md">
-              面白い大喜利イベントを作成しましょう ✨
+              面白い大���利イベントを作成しましょう ✨
             </Text>
           </VStack>
         </ModalHeader>
         <ModalCloseButton
           color="whiteAlpha.700"
+          onClick={handleClose}
           _hover={{
             color: 'white',
             bg: 'whiteAlpha.200',
@@ -468,7 +487,7 @@ const CreateOgiriEventModal = ({ isOpen, onClose }) => {
 
           <Button
             variant="ghost"
-            onClick={onClose}
+            onClick={handleClose}
             isDisabled={isGenerating}
             color={isGenerating ? 'gray.400' : 'whiteAlpha.700'}
             _hover={{
