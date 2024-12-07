@@ -59,6 +59,19 @@ export const getOgiriEvents = async (threadId) => {
 export const joinOgiriEvent = async (threadId, eventId, userId) => {
   try {
     const eventRef = doc(db, 'threads', threadId, 'ogiriEvents', eventId);
+    const eventDoc = await getDoc(eventRef);
+    const eventData = eventDoc.data();
+
+    const isExpired = checkEventExpiration({
+      createdAt: eventData.createdAt,
+      duration: eventData.duration,
+      status: eventData.status,
+    });
+
+    if (isExpired) {
+      throw new Error('このイベントは既に終了しています');
+    }
+
     await updateDoc(eventRef, {
       participants: arrayUnion(userId),
     });
