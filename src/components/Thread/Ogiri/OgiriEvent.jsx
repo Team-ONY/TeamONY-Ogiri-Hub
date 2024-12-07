@@ -188,7 +188,7 @@ const OgiriEvent = ({ event, creator, onJoinEvent, currentUser }) => {
 
     setIsSubmitting(true);
     try {
-      const newAnswer = await submitOgiriAnswer(
+      await submitOgiriAnswer(
         event.threadId,
         event.id,
         currentUser.uid,
@@ -196,7 +196,6 @@ const OgiriEvent = ({ event, creator, onJoinEvent, currentUser }) => {
         event.maxResponses
       );
 
-      setAnswers((prev) => [newAnswer, ...prev]);
       setAnswer('');
       setUserAnswerCount((prev) => prev + 1);
     } catch (error) {
