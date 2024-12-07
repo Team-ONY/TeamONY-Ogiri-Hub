@@ -451,6 +451,7 @@ const CreateOgiriEventModal = ({ isOpen, onClose }) => {
             fontSize="lg"
             px={8}
             borderRadius="xl"
+            isDisabled={isGenerating}
             _hover={{
               transform: 'translateY(-2px)',
               boxShadow: '0 8px 15px -3px rgba(255, 25, 136, 0.3)',
@@ -467,6 +468,7 @@ const CreateOgiriEventModal = ({ isOpen, onClose }) => {
           <Button
             variant="ghost"
             onClick={onClose}
+            isDisabled={isGenerating}
             color="whiteAlpha.700"
             _hover={{
               bg: 'whiteAlpha.100',
