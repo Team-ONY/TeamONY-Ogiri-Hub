@@ -430,7 +430,9 @@ const OgiriEvent = ({ event, creator, onJoinEvent, currentUser }) => {
                 isLoading={isSubmitting}
                 colorScheme="pink"
                 isDisabled={
-                  !answer.trim() || userAnswerCount >= event.maxResponses
+                  !answer.trim() ||
+                  userAnswerCount >= event.maxResponses ||
+                  isExpired
                 }
               >
                 回答する
