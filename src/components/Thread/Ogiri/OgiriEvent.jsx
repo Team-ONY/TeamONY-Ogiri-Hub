@@ -434,38 +434,79 @@ const OgiriEvent = ({ event, creator, onJoinEvent, currentUser }) => {
 
         {isParticipating && !isExpired && (
           <Box mt={4}>
-            <Textarea
-              value={answer}
-              onChange={(e) => setAnswer(e.target.value)}
-              placeholder="回答を入力..."
-              bg="whiteAlpha.50"
+            <Box
+              bg="rgba(0, 0, 0, 0.7)"
+              backdropFilter="blur(20px)"
+              borderRadius="24px"
               border="1px solid"
               borderColor="whiteAlpha.200"
-              _hover={{ borderColor: 'whiteAlpha.300' }}
-              _focus={{
-                borderColor: 'pink.400',
-                boxShadow: '0 0 0 1px #ED64A6',
-              }}
-              resize="vertical"
-              minH="100px"
-            />
-            <Flex justify="space-between" align="center" mt={2}>
-              <Text fontSize="sm" color="whiteAlpha.700">
-                残り{event.maxResponses - userAnswerCount}回回答可能
-              </Text>
-              <Button
-                onClick={handleSubmitAnswer}
-                isLoading={isSubmitting}
-                colorScheme="pink"
-                isDisabled={
-                  !answer.trim() ||
-                  userAnswerCount >= event.maxResponses ||
-                  isExpired
-                }
-              >
-                回答する
-              </Button>
-            </Flex>
+              overflow="hidden"
+              position="relative"
+            >
+              <Box
+                position="absolute"
+                top={0}
+                left={0}
+                right={0}
+                height="2px"
+                bgGradient="linear(to-r, pink.400, purple.500)"
+              />
+
+              <Box p={4}>
+                <Textarea
+                  value={answer}
+                  onChange={(e) => setAnswer(e.target.value)}
+                  placeholder="回答を入力..."
+                  bg="whiteAlpha.50"
+                  border="none"
+                  color="white"
+                  fontSize="lg"
+                  height="100px"
+                  py={2}
+                  px={3}
+                  borderRadius="xl"
+                  resize="none"
+                  textAlign="center"
+                  lineHeight="80px" // 100pxから80pxに変更して上に移動
+                  _placeholder={{
+                    color: 'whiteAlpha.500',
+                    textAlign: 'center',
+                  }}
+                  _focus={{
+                    bg: 'whiteAlpha.100',
+                    boxShadow: 'none',
+                  }}
+                  sx={{
+                    '&::-webkit-scrollbar': {
+                      display: 'none',
+                    },
+                  }}
+                />
+                <Flex justify="space-between" align="center" mt={2}>
+                  <Text fontSize="sm" color="whiteAlpha.700">
+                    残り{event.maxResponses - userAnswerCount}回回答可能
+                  </Text>
+                  <Button
+                    onClick={handleSubmitAnswer}
+                    isLoading={isSubmitting}
+                    bgGradient="linear(to-r, pink.400, purple.400)"
+                    color="white"
+                    size="sm"
+                    _hover={{
+                      bgGradient: 'linear(to-r, pink.500, purple.500)',
+                      transform: 'translateY(-1px)',
+                    }}
+                    isDisabled={
+                      !answer.trim() ||
+                      userAnswerCount >= event.maxResponses ||
+                      isExpired
+                    }
+                  >
+                    回答する
+                  </Button>
+                </Flex>
+              </Box>
+            </Box>
           </Box>
         )}
 
