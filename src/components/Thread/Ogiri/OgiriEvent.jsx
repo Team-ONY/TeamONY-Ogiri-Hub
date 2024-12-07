@@ -333,28 +333,57 @@ const OgiriEvent = ({ event, creator, onJoinEvent, currentUser }) => {
             <Button
               onClick={handleJoinClick}
               isLoading={isLoading}
+              isDisabled={isExpired}
               bgGradient={
-                isParticipating
-                  ? 'linear(to-r, green.400, teal.400)'
-                  : 'linear(to-r, pink.400, purple.400)'
+                isExpired
+                  ? 'linear(to-r, gray.600, gray.700)'
+                  : isParticipating
+                    ? 'linear(to-r, green.400, teal.400)'
+                    : 'linear(to-r, pink.400, purple.400)'
               }
-              color="white"
+              color={isExpired ? 'whiteAlpha.600' : 'white'}
               px={6}
               py={6}
               fontSize="md"
-              rightIcon={<Icon as={isParticipating ? FiCheck : FiArrowRight} />}
+              rightIcon={
+                !isExpired && (
+                  <Icon as={isParticipating ? FiCheck : FiArrowRight} />
+                )
+              }
               _hover={{
-                transform: 'translateY(-2px)',
-                boxShadow: '0 4px 12px rgba(255, 20, 147, 0.3)',
+                transform: isExpired ? 'none' : 'translateY(-2px)',
+                boxShadow: isExpired
+                  ? 'none'
+                  : '0 4px 12px rgba(255, 20, 147, 0.3)',
               }}
               _active={{
-                transform: 'translateY(0)',
+                transform: isExpired ? 'none' : 'translateY(0)',
                 boxShadow: 'none',
+              }}
+              _disabled={{
+                opacity: 0.7,
+                cursor: 'not-allowed',
+                boxShadow: 'none',
+                _hover: {
+                  bg: 'linear(to-r, gray.600, gray.700)',
+                  transform: 'none',
+                },
               }}
               borderRadius="xl"
               transition="all 0.2s"
+              border="1px solid"
+              borderColor={isExpired ? 'gray.600' : 'transparent'}
             >
-              {isParticipating ? '参加中' : '大喜利に参加する'}
+              {isExpired ? (
+                <HStack spacing={2} opacity={0.8}>
+                  <Icon as={FiClock} />
+                  <Text>終了済み</Text>
+                </HStack>
+              ) : isParticipating ? (
+                '参加中'
+              ) : (
+                '大喜利に参加する'
+              )}
             </Button>
           </Flex>
         </Flex>
