@@ -15,6 +15,8 @@ import {
   onSnapshot,
 } from 'firebase/firestore';
 
+//
+
 // 大喜利イベントの作成
 export const createOgiriEvent = async (threadId, eventData, userId) => {
   try {
@@ -137,6 +139,21 @@ export const submitOgiriAnswer = async (
   maxResponses
 ) => {
   try {
+    const eventRef = doc(db, 'threads', threadId, 'ogiriEvents', eventId);
+    const eventDoc = await getDoc(eventRef);
+    const eventData = eventDoc.data();
+
+    // イベントの期限切れチェック
+    const isExpired = checkEventExpiration({
+      createdAt: eventData.createdAt,
+      duration: eventData.duration,
+      status: eventData.status,
+    });
+
+    if (isExpired) {
+      throw new Error('イベントの制限時間が終了しています');
+    }
+
     // 回答数チェック
     const currentAnswerCount = await getUserAnswerCount(
       threadId,
@@ -144,12 +161,10 @@ export const submitOgiriAnswer = async (
       userId
     );
     if (currentAnswerCount >= maxResponses) {
-      throw new Error(`回答��が上限（${maxResponses}回）に達しています`);
+      throw new Error(`回答数が上限（${maxResponses}回）に達しています`);
     }
 
-    const eventRef = doc(db, 'threads', threadId, 'ogiriEvents', eventId);
     const answersRef = collection(eventRef, 'answers');
-
     const answerData = {
       content: answer,
       createdAt: Timestamp.now(),
