@@ -20,7 +20,6 @@ import {
   HStack,
   Image,
   Spinner,
-  Center,
   FormControl,
   FormHelperText,
 } from '@chakra-ui/react';
@@ -266,7 +265,7 @@ const CreateOgiriEventModal = ({ isOpen, onClose }) => {
                     }}
                     transition="all 0.3s ease"
                   />
-                  {!isGenerating && (
+                  {!isGenerating ? (
                     <Button
                       onClick={handleGenerateImage}
                       colorScheme="purple"
@@ -275,23 +274,17 @@ const CreateOgiriEventModal = ({ isOpen, onClose }) => {
                     >
                       画像を生成 ({generatedImages.length}/3)
                     </Button>
-                  )}
-
-                  {isGenerating && (
-                    <Center p={8}>
-                      <VStack spacing={4}>
-                        <Spinner
-                          thickness="4px"
-                          speed="0.65s"
-                          emptyColor="gray.200"
-                          color="purple.500"
-                          size="xl"
-                        />
-                        <Text color="whiteAlpha.800">
-                          AIが画像を生成中です...
-                        </Text>
-                      </VStack>
-                    </Center>
+                  ) : (
+                    <Button
+                      isDisabled
+                      bg="gray.600"
+                      _hover={{ bg: 'gray.600' }}
+                      _active={{ bg: 'gray.600' }}
+                      color="whiteAlpha.800"
+                      leftIcon={<Spinner size="sm" />}
+                    >
+                      AI画像生成中...
+                    </Button>
                   )}
 
                   {selectedImage && (
@@ -429,7 +422,7 @@ const CreateOgiriEventModal = ({ isOpen, onClose }) => {
                   transition="all 0.3s ease"
                 />
                 <FormHelperText color="whiteAlpha.600">
-                  一人のユーザーが投稿できる回答の最大��
+                  一人のユーザーが投稿できる回答の最大数
                 </FormHelperText>
               </FormControl>
             </MotionBox>
@@ -444,7 +437,11 @@ const CreateOgiriEventModal = ({ isOpen, onClose }) => {
         <ModalFooter px={8} pb={8} gap={4}>
           <MotionButton
             onClick={handleCreateEvent}
-            bg="linear-gradient(135deg, #FF1988 0%, #805AD5 100%)"
+            bg={
+              isGenerating
+                ? 'gray.600'
+                : 'linear-gradient(135deg, #FF1988 0%, #805AD5 100%)'
+            }
             color="white"
             size="lg"
             height="56px"
@@ -452,47 +449,31 @@ const CreateOgiriEventModal = ({ isOpen, onClose }) => {
             px={8}
             borderRadius="xl"
             isDisabled={isGenerating}
-            opacity={isGenerating ? 0.5 : 1}
-            cursor={isGenerating ? 'not-allowed' : 'pointer'}
-            _disabled={{
-              bg: 'linear-gradient(135deg, #FF1988 0%, #805AD5 100%)',
-              opacity: 0.5,
-              cursor: 'not-allowed',
-              _hover: {
-                transform: 'none',
-                boxShadow: 'none',
-              },
-            }}
+            leftIcon={
+              isGenerating ? <Spinner size="sm" /> : <Icon as={FiSend} />
+            }
             _hover={{
-              transform: 'translateY(-2px)',
-              boxShadow: '0 8px 15px -3px rgba(255, 25, 136, 0.3)',
-              bg: 'linear-gradient(135deg, #FF1988 20%, #6B46C1 120%)',
+              transform: isGenerating ? 'none' : 'translateY(-2px)',
+              boxShadow: isGenerating
+                ? 'none'
+                : '0 8px 15px -3px rgba(255, 25, 136, 0.3)',
+              bg: isGenerating
+                ? 'gray.600'
+                : 'linear-gradient(135deg, #FF1988 20%, #6B46C1 120%)',
             }}
-            _active={{ transform: 'scale(0.95)' }}
-            leftIcon={<Icon as={FiSend} />}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: isGenerating ? 0.5 : 1 }}
-            transition={{ delay: 0.5 }}
+            _active={{ transform: isGenerating ? 'none' : 'scale(0.95)' }}
           >
-            イベントを作成
+            {isGenerating ? 'AI画像生成中...' : 'イベントを作成'}
           </MotionButton>
+
           <Button
             variant="ghost"
             onClick={onClose}
             isDisabled={isGenerating}
-            opacity={isGenerating ? 0.5 : 1}
-            cursor={isGenerating ? 'not-allowed' : 'pointer'}
-            color="whiteAlpha.700"
-            _disabled={{
-              opacity: 0.5,
-              cursor: 'not-allowed',
-              _hover: {
-                bg: 'transparent',
-              },
-            }}
+            color={isGenerating ? 'gray.400' : 'whiteAlpha.700'}
             _hover={{
-              bg: 'whiteAlpha.100',
-              color: 'white',
+              bg: isGenerating ? 'transparent' : 'whiteAlpha.100',
+              color: isGenerating ? 'gray.400' : 'white',
             }}
             height="56px"
             fontSize="lg"
