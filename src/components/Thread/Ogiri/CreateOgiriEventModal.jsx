@@ -429,7 +429,7 @@ const CreateOgiriEventModal = ({ isOpen, onClose }) => {
                   transition="all 0.3s ease"
                 />
                 <FormHelperText color="whiteAlpha.600">
-                  一人のユーザーが投稿できる回答の最大数
+                  一人のユーザーが投稿できる回答の最大��
                 </FormHelperText>
               </FormControl>
             </MotionBox>
@@ -452,6 +452,17 @@ const CreateOgiriEventModal = ({ isOpen, onClose }) => {
             px={8}
             borderRadius="xl"
             isDisabled={isGenerating}
+            opacity={isGenerating ? 0.5 : 1}
+            cursor={isGenerating ? 'not-allowed' : 'pointer'}
+            _disabled={{
+              bg: 'linear-gradient(135deg, #FF1988 0%, #805AD5 100%)',
+              opacity: 0.5,
+              cursor: 'not-allowed',
+              _hover: {
+                transform: 'none',
+                boxShadow: 'none',
+              },
+            }}
             _hover={{
               transform: 'translateY(-2px)',
               boxShadow: '0 8px 15px -3px rgba(255, 25, 136, 0.3)',
@@ -460,7 +471,7 @@ const CreateOgiriEventModal = ({ isOpen, onClose }) => {
             _active={{ transform: 'scale(0.95)' }}
             leftIcon={<Icon as={FiSend} />}
             initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
+            animate={{ opacity: isGenerating ? 0.5 : 1 }}
             transition={{ delay: 0.5 }}
           >
             イベントを作成
@@ -469,7 +480,16 @@ const CreateOgiriEventModal = ({ isOpen, onClose }) => {
             variant="ghost"
             onClick={onClose}
             isDisabled={isGenerating}
+            opacity={isGenerating ? 0.5 : 1}
+            cursor={isGenerating ? 'not-allowed' : 'pointer'}
             color="whiteAlpha.700"
+            _disabled={{
+              opacity: 0.5,
+              cursor: 'not-allowed',
+              _hover: {
+                bg: 'transparent',
+              },
+            }}
             _hover={{
               bg: 'whiteAlpha.100',
               color: 'white',
