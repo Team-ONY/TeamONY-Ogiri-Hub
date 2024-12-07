@@ -164,7 +164,7 @@ const OgiriAnswers = ({ answers, currentUser, onLike, bestAnswerId }) => {
 
   return (
     <VStack spacing={6} w="full" align="stretch" mt={6} px={2}>
-      {[...answers].reverse().map((answer) => (
+      {answers.map((answer) => (
         <OgiriAnswer
           key={answer.id}
           answer={answer}
