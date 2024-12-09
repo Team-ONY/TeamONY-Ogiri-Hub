@@ -20,7 +20,6 @@ import ThreadCard from './ThreadCard'; //追加部分
 import JoinedThreadCard from './JoinedThreadCard'; //追加部分 新しいカードコンポーネント
 import '../Profile/ProfileMasonry.css';
 
-// eslint-disable-next-line no-unused-vars リントで使う
 //const MotionBox = motion(Box);
 
 const ProfileMasonry = () => {
