@@ -1,10 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Masonry from 'react-masonry-css';
-// eslint-disable-next-line no-unused-vars
-import { SimpleGrid, Box, Text } from '@chakra-ui/react';
-// eslint-disable-next-line no-unused-vars
-import { motion } from 'framer-motion';
+import { Box } from '@chakra-ui/react';
 import { auth, db } from '../../config/firebase';
 import { collection, query, where, getDocs, orderBy } from 'firebase/firestore';
 import {
@@ -20,8 +17,10 @@ import StatCard from './StatCard';
 import AchievementCard from './AchievementCard';
 import HallOfFameCard from './HallOfFameCard';
 import ThreadCard from './ThreadCard'; //追加部分
+import JoinedThreadCard from './JoinedThreadCard'; //追加部分 新しいカードコンポーネント
 import '../Profile/ProfileMasonry.css';
 
+// eslint-disable-next-line no-unused-vars リントで使う
 //const MotionBox = motion(Box);
 
 const ProfileMasonry = () => {
@@ -38,6 +37,7 @@ const ProfileMasonry = () => {
   const [achievements, setAchievements] = useState([]);
   const [hallOfFamePosts, setHallOfFamePosts] = useState([]);
   const [userThreads, setUserThreads] = useState([]); //追加部分
+  const [joinedThreads, setJoinedThreads] = useState([]); // 新しいステート 追加部分
 
   const breakpointColumns = {
     default: 3,
@@ -85,6 +85,12 @@ const ProfileMasonry = () => {
         where('createdBy', '==', uid) // ログインユーザーのスレッドを取得
         /*orderBy('createdAt', 'desc') // 新しい順で並び替え*/
       );
+
+     // 自分が参加しているスレッドを取得するクエリ
+      const joinedThreadsQuery = query(
+        collection(db, 'threads'),
+        where('participants', 'array-contains', uid) // 自分が参加しているスレッドを取得
+      );
       //----追加部分終了----
 
       // Stats取得
@@ -111,12 +117,14 @@ const ProfileMasonry = () => {
 
       const [
         threadsSnapshot, //追加部分
+        joinedThreadsSnapshot, //追加部分
         postsSnapshot,
         hallOfFameSnapshot,
         streakSnapshot,
         achievementsSnapshot,
       ] = await Promise.all([
         getDocs(threadsQuery), //追加部分
+        getDocs(joinedThreadsQuery), //追加部分
         getDocs(postsQuery),
         getDocs(hallOfFameQuery),
         getDocs(streakQuery),
@@ -151,6 +159,21 @@ const ProfileMasonry = () => {
           ...doc.data(), //スプレッド構文
         }))
       );
+
+      // 自分が作成したスレッドを参加中のスレッドから除外
+      const myThreadIds = new Set(
+        threadsSnapshot.docs.map((doc) => doc.id) // 自分が作成したスレッドの ID をリスト化
+      );
+
+      // 参加しているスレッドのデータをステートに保存
+      setJoinedThreads(
+        joinedThreadsSnapshot.docs
+          .filter((doc) => !myThreadIds.has(doc.id)) // 自分のスレッドを除外
+          .map((doc) => ({
+            id: doc.id,
+            ...doc.data(),
+          }))
+      ); 
       //----追加部分終了----
 
       setLoading(false);
@@ -183,6 +206,9 @@ const ProfileMasonry = () => {
         ))}
         {/*----スレッドを表示させる(追加部分)----*/}
         <ThreadCard threads={userThreads} user={user} />
+
+        {/* 追加：自分が参加しているスレッド */}
+        <JoinedThreadCard threads={joinedThreads} user={user} />
         {/*----追加部分終了----*/}
       </Masonry>
     </Box>

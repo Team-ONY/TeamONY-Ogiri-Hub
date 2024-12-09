@@ -1,10 +1,10 @@
 import { Box, VStack, Text, Avatar, HStack } from '@chakra-ui/react';
 import { motion } from 'framer-motion';
-import { PropTypes } from 'prop-types';
+import PropTypes from 'prop-types';
 
 const MotionBox = motion(Box);
 
-const ThreadCard = ({ threads, user }) => (
+const JoinedThreadCard = ({ threads, user }) => (
   <MotionBox
     initial={{ opacity: 0, y: 20 }}
     animate={{ opacity: 1, y: 0 }}
@@ -15,21 +15,21 @@ const ThreadCard = ({ threads, user }) => (
     backdropFilter="blur(10px)"
     boxShadow="0 4px 30px rgba(0, 0, 0, 0.1)"
     border="1px solid rgba(255, 255, 255, 0.1)"
-    maxH="400px" // カードの最大高さを指定
-    overflowY="auto" // 縦スクロールを有効化
+    maxH="400px" // 最大高さを設定
+    overflowY="auto" // スクロール可能に
   >
     {/* ヘッダー */}
     <VStack align="start" spacing={4} mb={4}>
       <HStack spacing={3} align="center">
         <Avatar
-          size="md" //ここで名前とアイコン表示中
+          size="md"
           name={user ? user.displayName : 'Anonymous'}
           src={user?.photoURL || 'defaultPhotoURL'}
           border="2px solid"
-          borderColor="purple.500"
+          borderColor="blue.500"
         />
         <Text color="whiteAlpha.800" fontSize="lg" fontWeight="bold">
-          自分のスレッド
+          参加スレッド
         </Text>
       </HStack>
     </VStack>
@@ -71,22 +71,22 @@ const ThreadCard = ({ threads, user }) => (
   </MotionBox>
 );
 
-ThreadCard.propTypes = {
-  threads: PropTypes.arrayOf(                 // `threads` プロパティは配列
-    PropTypes.shape({                         // 配列の各要素はオブジェクトで以下の構造を持つ
-      id: PropTypes.string.isRequired,        // `id` は必須で文字列型
-      title: PropTypes.string.isRequired,     // `title` は必須で文字列型
-      coment: PropTypes.string,               // `coment` は任意で文字列型
-      createdAt: PropTypes.object.isRequired, // `createdAt` は必須でオブジェクト型 (Firebase Timestamp)
+JoinedThreadCard.propTypes = {
+  threads: PropTypes.arrayOf(
+    PropTypes.shape({
+      id: PropTypes.string.isRequired,        // スレッドの一意なID（必須）
+      title: PropTypes.string.isRequired,     // スレッドのタイトル（必須）
+      content: PropTypes.string,              // スレッドの内容（任意）
+      createdAt: PropTypes.object.isRequired, // 作成日時（Firebase Timestamp）（必須）
     })
-  ).isRequired,                               // `threads` プロパティ自体も必須
-  user: PropTypes.shape({                     // `user` プロパティはオブジェクト
-    displayName: PropTypes.string.isRequired, // `displayName` は必須で文字列型
-    photoURL: PropTypes.string.isRequired,    // `photoURL` は必須で文字列型
+  ).isRequired, // threads自体が必須
+  user: PropTypes.shape({
+    displayName: PropTypes.string.isRequired,  // ユーザー名（必須）
+    photoURL: PropTypes.string.isRequired,     // ユーザーのプロフィール画像のURL（必須）
   }),
 };
-ThreadCard.defaultProps = {
+JoinedThreadCard.defaultProps = {
   user: { displayName: 'Anonymous', photoURL: '' },
 };
 
-export default ThreadCard;
+export default JoinedThreadCard;
