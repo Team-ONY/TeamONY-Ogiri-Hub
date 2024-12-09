@@ -18,6 +18,17 @@ import { HiPencil } from 'react-icons/hi';
 import { motion } from 'framer-motion';
 import {PropTypes} from 'prop-types';
 
+import avatar1 from '../../assets/icooonavatar/avatar1.png';
+import avatar2 from '../../assets/icooonavatar/avatar2.png';
+import avatar3 from '../../assets/icooonavatar/avatar3.png';
+import avatar4 from '../../assets/icooonavatar/avatar4.png';
+import avatar5 from '../../assets/icooonavatar/avatar5.png';
+import avatar6 from '../../assets/icooonavatar/avatar6.png';
+import avatar7 from '../../assets/icooonavatar/avatar7.png';
+import avatar8 from '../../assets/icooonavatar/avatar8.png';
+import avatar9 from '../../assets/icooonavatar/avatar9.png';
+// 必要に応じて追加
+
 const MotionBox = motion(Box);
 
 const UserInfoCard = ({ user }) => {
@@ -29,6 +40,12 @@ const UserInfoCard = ({ user }) => {
 
   const openAvatarList = () => setIsAvatarListOpen(true);
   const closeAvatarList = () => setIsAvatarListOpen(false);
+
+  //アバターリスト
+  const avatarList = [
+    avatar1, avatar2, avatar3,
+    avatar4,avatar5,avatar6,
+    avatar7,avatar8,avatar9]; 
 
   return (
     <>
@@ -146,10 +163,10 @@ const UserInfoCard = ({ user }) => {
           <ModalCloseButton color="white" />
           <ModalBody>
             <SimpleGrid columns={3} spacing={4}>
-              {[...Array(9)].map((_, idx) => (
+              {avatarList.map((avatar, idx) => (
                 <Avatar
                   key={idx}
-                  src={`https://via.placeholder.com/150?text=Avatar+${idx + 1}`}
+                  src={avatar}
                   cursor="pointer"
                   size="xl"
                   onClick={() => console.log(`アバター${idx + 1}が選択されました`)}
