@@ -20,7 +20,6 @@ import {
   HStack,
   Image,
   Spinner,
-  Center,
   FormControl,
   FormHelperText,
 } from '@chakra-ui/react';
@@ -45,6 +44,18 @@ const CreateOgiriEventModal = ({ isOpen, onClose }) => {
   const [selectedImage, setSelectedImage] = useState(null);
   const [error, setError] = useState('');
   const [lastGeneratedTime, setLastGeneratedTime] = useState(0);
+
+  const resetModalState = () => {
+    setTitle('');
+    setDuration('');
+    setMaxResponses('');
+    setOdaiType('text');
+    setImagePrompt('');
+    setGeneratedImages([]);
+    setSelectedImage(null);
+    setError('');
+    setLastGeneratedTime(0);
+  };
 
   const handleCreateEvent = async () => {
     // バリデーションを追加
@@ -75,6 +86,7 @@ const CreateOgiriEventModal = ({ isOpen, onClose }) => {
     };
 
     onClose(newEvent);
+    resetModalState();
   };
 
   // AI画像生成の処理
@@ -117,8 +129,13 @@ const CreateOgiriEventModal = ({ isOpen, onClose }) => {
     }
   };
 
+  const handleClose = () => {
+    onClose();
+    resetModalState();
+  };
+
   return (
-    <Modal isOpen={isOpen} onClose={onClose} size="2xl">
+    <Modal isOpen={isOpen} onClose={handleClose} size="2xl">
       <ModalOverlay backdropFilter="blur(10px)" />
       <MotionModalContent
         bg="linear-gradient(170deg, rgba(18, 18, 18, 0.95) 0%, rgba(30, 30, 30, 0.95) 100%)"
@@ -148,12 +165,13 @@ const CreateOgiriEventModal = ({ isOpen, onClose }) => {
               大喜利イベントの作成
             </Heading>
             <Text color="whiteAlpha.700" fontSize="md">
-              面白い大喜利イベントを作成しましょう ✨
+              面白い大���利イベントを作成しましょう ✨
             </Text>
           </VStack>
         </ModalHeader>
         <ModalCloseButton
           color="whiteAlpha.700"
+          onClick={handleClose}
           _hover={{
             color: 'white',
             bg: 'whiteAlpha.200',
@@ -266,7 +284,7 @@ const CreateOgiriEventModal = ({ isOpen, onClose }) => {
                     }}
                     transition="all 0.3s ease"
                   />
-                  {!isGenerating && (
+                  {!isGenerating ? (
                     <Button
                       onClick={handleGenerateImage}
                       colorScheme="purple"
@@ -275,23 +293,17 @@ const CreateOgiriEventModal = ({ isOpen, onClose }) => {
                     >
                       画像を生成 ({generatedImages.length}/3)
                     </Button>
-                  )}
-
-                  {isGenerating && (
-                    <Center p={8}>
-                      <VStack spacing={4}>
-                        <Spinner
-                          thickness="4px"
-                          speed="0.65s"
-                          emptyColor="gray.200"
-                          color="purple.500"
-                          size="xl"
-                        />
-                        <Text color="whiteAlpha.800">
-                          AIが画像を生成中です...
-                        </Text>
-                      </VStack>
-                    </Center>
+                  ) : (
+                    <Button
+                      isDisabled
+                      bg="gray.600"
+                      _hover={{ bg: 'gray.600' }}
+                      _active={{ bg: 'gray.600' }}
+                      color="whiteAlpha.800"
+                      leftIcon={<Spinner size="sm" />}
+                    >
+                      AI画像生成中...
+                    </Button>
                   )}
 
                   {selectedImage && (
@@ -444,33 +456,43 @@ const CreateOgiriEventModal = ({ isOpen, onClose }) => {
         <ModalFooter px={8} pb={8} gap={4}>
           <MotionButton
             onClick={handleCreateEvent}
-            bg="linear-gradient(135deg, #FF1988 0%, #805AD5 100%)"
+            bg={
+              isGenerating
+                ? 'gray.600'
+                : 'linear-gradient(135deg, #FF1988 0%, #805AD5 100%)'
+            }
             color="white"
             size="lg"
             height="56px"
             fontSize="lg"
             px={8}
             borderRadius="xl"
+            isDisabled={isGenerating}
+            leftIcon={
+              isGenerating ? <Spinner size="sm" /> : <Icon as={FiSend} />
+            }
             _hover={{
-              transform: 'translateY(-2px)',
-              boxShadow: '0 8px 15px -3px rgba(255, 25, 136, 0.3)',
-              bg: 'linear-gradient(135deg, #FF1988 20%, #6B46C1 120%)',
+              transform: isGenerating ? 'none' : 'translateY(-2px)',
+              boxShadow: isGenerating
+                ? 'none'
+                : '0 8px 15px -3px rgba(255, 25, 136, 0.3)',
+              bg: isGenerating
+                ? 'gray.600'
+                : 'linear-gradient(135deg, #FF1988 20%, #6B46C1 120%)',
             }}
-            _active={{ transform: 'scale(0.95)' }}
-            leftIcon={<Icon as={FiSend} />}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.5 }}
+            _active={{ transform: isGenerating ? 'none' : 'scale(0.95)' }}
           >
-            イベントを作成
+            {isGenerating ? 'AI画像生成中...' : 'イベントを作成'}
           </MotionButton>
+
           <Button
             variant="ghost"
-            onClick={onClose}
-            color="whiteAlpha.700"
+            onClick={handleClose}
+            isDisabled={isGenerating}
+            color={isGenerating ? 'gray.400' : 'whiteAlpha.700'}
             _hover={{
-              bg: 'whiteAlpha.100',
-              color: 'white',
+              bg: isGenerating ? 'transparent' : 'whiteAlpha.100',
+              color: isGenerating ? 'gray.400' : 'white',
             }}
             height="56px"
             fontSize="lg"

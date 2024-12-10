@@ -12,14 +12,21 @@ import {
   AvatarGroup,
   Textarea,
   useDisclosure,
+  Collapse,
 } from '@chakra-ui/react';
 import { motion } from 'framer-motion';
-import { FiUsers, FiClock, FiArrowRight, FiCheck } from 'react-icons/fi';
+import {
+  FiUsers,
+  FiClock,
+  FiArrowRight,
+  FiCheck,
+  FiChevronUp,
+  FiChevronDown,
+} from 'react-icons/fi';
 import PropTypes from 'prop-types';
 import { useState, useEffect } from 'react';
 import {
   getEventParticipantsDetails,
-  getOgiriAnswers,
   submitOgiriAnswer,
   toggleAnswerLike,
   getUserAnswerCount,
@@ -29,6 +36,8 @@ import {
 } from '../../../services/ogiriService';
 import OgiriAnswers from './OgiriAnswers';
 import { useAlert } from '../../../hooks/useAlert';
+import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
+import { db } from '../../../config/firebase';
 const MotionBox = motion(Box);
 
 const OgiriEvent = ({ event, creator, onJoinEvent, currentUser }) => {
@@ -65,19 +74,35 @@ const OgiriEvent = ({ event, creator, onJoinEvent, currentUser }) => {
   }, [event.participants]);
 
   useEffect(() => {
-    const fetchAnswers = async () => {
-      if (!event.id || !isAnswersOpen) return;
+    if (!event.id || !isAnswersOpen) return;
 
-      try {
-        const fetchedAnswers = await getOgiriAnswers(event.threadId, event.id);
-        setAnswers(fetchedAnswers);
-      } catch (error) {
-        console.error('Error fetching answers:', error);
+    const answersRef = collection(
+      db,
+      'threads',
+      event.threadId,
+      'ogiriEvents',
+      event.id,
+      'answers'
+    );
+    const q = query(answersRef, orderBy('createdAt', 'desc'));
+
+    const unsubscribe = onSnapshot(
+      q,
+      (snapshot) => {
+        const newAnswers = snapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+          createdAt: doc.data().createdAt?.toDate() || new Date(),
+        }));
+        setAnswers(newAnswers);
+      },
+      (error) => {
+        console.error('Error listening to answers:', error);
       }
-    };
+    );
 
-    fetchAnswers();
-  }, [event.id, isAnswersOpen, event.threadId]);
+    return () => unsubscribe();
+  }, [event.id, event.threadId, isAnswersOpen]);
 
   useEffect(() => {
     const checkExpirationAndBestAnswer = async () => {
@@ -163,7 +188,7 @@ const OgiriEvent = ({ event, creator, onJoinEvent, currentUser }) => {
 
     setIsSubmitting(true);
     try {
-      const newAnswer = await submitOgiriAnswer(
+      await submitOgiriAnswer(
         event.threadId,
         event.id,
         currentUser.uid,
@@ -171,7 +196,6 @@ const OgiriEvent = ({ event, creator, onJoinEvent, currentUser }) => {
         event.maxResponses
       );
 
-      setAnswers((prev) => [newAnswer, ...prev]);
       setAnswer('');
       setUserAnswerCount((prev) => prev + 1);
     } catch (error) {
@@ -225,7 +249,6 @@ const OgiriEvent = ({ event, creator, onJoinEvent, currentUser }) => {
       p={6}
       position="relative"
       overflow="hidden"
-      boxShadow="0 8px 32px 0 rgba(236, 72, 153, 0.37), 0 8px 32px 0 rgba(128, 90, 213, 0.37)"
       _before={{
         content: '""',
         position: 'absolute',
@@ -294,48 +317,72 @@ const OgiriEvent = ({ event, creator, onJoinEvent, currentUser }) => {
             </VStack>
           </HStack>
 
-          <Flex justify="space-between" align="center" mt={4}>
-            <HStack spacing={2} overflow="hidden">
-              <AvatarGroup size="sm" max={3}>
-                {Object.values(participantsDetails).map((participant) => (
-                  <Avatar
-                    key={participant.uid}
-                    name={participant.username}
-                    src={participant.photoURL}
-                    size="sm"
-                  />
-                ))}
-              </AvatarGroup>
-              <Text color="whiteAlpha.800" fontSize="sm">
-                {event.participants?.length || 0}人が参加中
-              </Text>
-            </HStack>
+          <Flex gap={4} align="center">
+            <AvatarGroup size="sm" max={3}>
+              {Object.values(participantsDetails).map((participant) => (
+                <Avatar
+                  key={participant.uid}
+                  name={participant.username}
+                  src={participant.photoURL}
+                  size="sm"
+                />
+              ))}
+            </AvatarGroup>
 
             <Button
               onClick={handleJoinClick}
               isLoading={isLoading}
+              isDisabled={isExpired}
               bgGradient={
-                isParticipating
-                  ? 'linear(to-r, green.400, teal.400)'
-                  : 'linear(to-r, pink.400, purple.400)'
+                isExpired
+                  ? 'linear(to-r, gray.600, gray.700)'
+                  : isParticipating
+                    ? 'linear(to-r, green.400, teal.400)'
+                    : 'linear(to-r, pink.400, purple.400)'
               }
-              color="white"
+              color={isExpired ? 'whiteAlpha.600' : 'white'}
               px={6}
               py={6}
               fontSize="md"
-              rightIcon={<Icon as={isParticipating ? FiCheck : FiArrowRight} />}
+              rightIcon={
+                !isExpired && (
+                  <Icon as={isParticipating ? FiCheck : FiArrowRight} />
+                )
+              }
               _hover={{
-                transform: 'translateY(-2px)',
-                boxShadow: '0 4px 12px rgba(255, 20, 147, 0.3)',
+                transform: isExpired ? 'none' : 'translateY(-2px)',
+                boxShadow: isExpired
+                  ? 'none'
+                  : '0 4px 12px rgba(255, 20, 147, 0.3)',
               }}
               _active={{
-                transform: 'translateY(0)',
+                transform: isExpired ? 'none' : 'translateY(0)',
                 boxShadow: 'none',
+              }}
+              _disabled={{
+                opacity: 0.7,
+                cursor: 'not-allowed',
+                boxShadow: 'none',
+                _hover: {
+                  bg: 'linear(to-r, gray.600, gray.700)',
+                  transform: 'none',
+                },
               }}
               borderRadius="xl"
               transition="all 0.2s"
+              border="1px solid"
+              borderColor={isExpired ? 'gray.600' : 'transparent'}
             >
-              {isParticipating ? '参加中' : '大喜利に参加する'}
+              {isExpired ? (
+                <HStack spacing={2} opacity={0.8}>
+                  <Icon as={FiClock} />
+                  <Text>終了済み</Text>
+                </HStack>
+              ) : isParticipating ? (
+                '参加中'
+              ) : (
+                '大喜利に参加する'
+              )}
             </Button>
           </Flex>
         </Flex>
@@ -385,93 +432,108 @@ const OgiriEvent = ({ event, creator, onJoinEvent, currentUser }) => {
           )}
         </Box>
 
-        <HStack spacing={4} mt={4}>
-          <Badge
-            colorScheme={isExpired ? 'red' : 'green'}
-            variant="solid"
-            px={3}
-            py={1}
-            borderRadius="full"
-          >
-            {remainingTime}
-          </Badge>
-        </HStack>
-
-        {!isExpired && isParticipating && (
-          <VStack spacing={4} mt={6} align="stretch">
-            <Box>
-              <Text color="whiteAlpha.700" fontSize="sm" mb={2}>
-                残り回答可能数: {event.maxResponses - userAnswerCount}回
-              </Text>
-              <Textarea
-                value={answer}
-                onChange={(e) => setAnswer(e.target.value)}
-                placeholder="回答を入力..."
-                isDisabled={isExpired || userAnswerCount >= event.maxResponses}
-                bg="whiteAlpha.100"
-                border="1px solid"
-                borderColor="whiteAlpha.200"
-                _hover={{ borderColor: 'pink.400' }}
-                _focus={{
-                  borderColor: 'pink.400',
-                  boxShadow: '0 0 0 1px #FF1493',
-                }}
-                resize="none"
-              />
-            </Box>
-            <Button
-              onClick={handleSubmitAnswer}
-              isLoading={isSubmitting}
-              isDisabled={
-                isExpired ||
-                userAnswerCount >= event.maxResponses ||
-                !answer.trim()
-              }
-              colorScheme="pink"
-              alignSelf="flex-end"
+        {isParticipating && !isExpired && (
+          <Box mt={4}>
+            <Box
+              bg="rgba(0, 0, 0, 0.7)"
+              backdropFilter="blur(20px)"
+              borderRadius="24px"
+              border="1px solid"
+              borderColor="whiteAlpha.200"
+              overflow="hidden"
+              position="relative"
             >
-              回答を送信
-            </Button>
-            {userAnswerCount >= event.maxResponses && (
-              <Text color="pink.400" fontSize="sm" textAlign="center">
-                回答数の上限に達しました
-              </Text>
-            )}
-          </VStack>
-        )}
+              <Box
+                position="absolute"
+                top={0}
+                left={0}
+                right={0}
+                height="2px"
+                bgGradient="linear(to-r, pink.400, purple.500)"
+              />
 
-        {isExpired && (
-          <Box
-            mt={6}
-            p={4}
-            bg="whiteAlpha.100"
-            borderRadius="xl"
-            textAlign="center"
-          >
-            <Text color="whiteAlpha.800">この大喜利は終了しました</Text>
+              <Box p={4}>
+                <Textarea
+                  value={answer}
+                  onChange={(e) => setAnswer(e.target.value)}
+                  placeholder="回答を入力..."
+                  bg="whiteAlpha.50"
+                  border="none"
+                  color="white"
+                  fontSize="lg"
+                  height="100px"
+                  py={2}
+                  px={3}
+                  borderRadius="xl"
+                  resize="none"
+                  textAlign="center"
+                  lineHeight="80px" // 100pxから80pxに変更して上に移動
+                  _placeholder={{
+                    color: 'whiteAlpha.500',
+                    textAlign: 'center',
+                  }}
+                  _focus={{
+                    bg: 'whiteAlpha.100',
+                    boxShadow: 'none',
+                  }}
+                  sx={{
+                    '&::-webkit-scrollbar': {
+                      display: 'none',
+                    },
+                  }}
+                />
+                <Flex justify="space-between" align="center" mt={2}>
+                  <Text fontSize="sm" color="whiteAlpha.700">
+                    残り{event.maxResponses - userAnswerCount}回回答可能
+                  </Text>
+                  <Button
+                    onClick={handleSubmitAnswer}
+                    isLoading={isSubmitting}
+                    bgGradient="linear(to-r, pink.400, purple.400)"
+                    color="white"
+                    size="sm"
+                    _hover={{
+                      bgGradient: 'linear(to-r, pink.500, purple.500)',
+                      transform: 'translateY(-1px)',
+                    }}
+                    isDisabled={
+                      !answer.trim() ||
+                      userAnswerCount >= event.maxResponses ||
+                      isExpired
+                    }
+                  >
+                    回答する
+                  </Button>
+                </Flex>
+              </Box>
+            </Box>
           </Box>
         )}
 
-        <Button
-          onClick={toggleAnswers}
-          variant="ghost"
-          width="full"
-          mt={4}
-          color="whiteAlpha.700"
-        >
-          {isAnswersOpen ? '回答を隠す' : '回答を表示'}
-        </Button>
-
-        {isAnswersOpen && (
-          <OgiriAnswers
-            answers={answers}
-            usersDetails={participantsDetails}
-            currentUser={currentUser}
-            onLike={handleLike}
-            bestAnswerId={bestAnswerId}
-            isExpired={isExpired}
-          />
-        )}
+        <Box mt={4}>
+          <Button
+            onClick={toggleAnswers}
+            variant="ghost"
+            color="whiteAlpha.800"
+            width="100%"
+            rightIcon={
+              <Icon as={isAnswersOpen ? FiChevronUp : FiChevronDown} />
+            }
+          >
+            回答を{isAnswersOpen ? '閉じる' : '見る'}
+          </Button>
+          <Collapse in={isAnswersOpen}>
+            <VStack spacing={4} mt={4}>
+              <OgiriAnswers
+                answers={answers}
+                currentUser={currentUser}
+                onLike={handleLike}
+                bestAnswerId={bestAnswerId}
+                isExpired={isExpired}
+              />
+            </VStack>
+          </Collapse>
+        </Box>
       </Flex>
     </MotionBox>
   );

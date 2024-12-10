@@ -13,11 +13,17 @@ import CreateOgiriEventModal from './Ogiri/CreateOgiriEventModal';
 import OgiriEvent from './Ogiri/OgiriEvent';
 import {
   createOgiriEvent,
-  getOgiriEvents,
   joinOgiriEvent,
   leaveOgiriEvent,
 } from '../../services/ogiriService';
-import { doc, getDoc } from 'firebase/firestore';
+import {
+  doc,
+  getDoc,
+  onSnapshot,
+  collection,
+  query,
+  orderBy,
+} from 'firebase/firestore';
 import { db } from '../../config/firebase';
 
 function ThreadDetail() {
@@ -57,28 +63,52 @@ function ThreadDetail() {
     handleDeleteComment,
   } = useComments(id, thread, setThread, currentUser);
 
-  // スレッドデータ取得後のコメント初期化を確認
+  // スレッドとコメントのリアルタイム監視
   useEffect(() => {
-    if (thread?.comments && !displayedComments.length) {
-      const sortedComments = [...thread.comments].sort(
-        (a, b) =>
-          b.createdAt.toDate().getTime() - a.createdAt.toDate().getTime()
-      );
-      const initialComments = sortedComments.slice(0, 20).map((comment) => ({
-        ...comment,
-        uniqueKey: `${comment.id}-initial`,
-      }));
+    if (!id) return;
 
-      setDisplayedComments(initialComments);
-      setHasMoreComments(thread.comments.length > 20);
-      setIsLoadingComments(false);
-    }
+    const threadRef = doc(db, 'threads', id);
+    const unsubscribe = onSnapshot(
+      threadRef,
+      (doc) => {
+        if (doc.exists()) {
+          const threadData = doc.data();
+          setThread({
+            id: doc.id,
+            ...threadData,
+          });
+
+          if (threadData.comments) {
+            const sortedComments = [...threadData.comments].sort(
+              (a, b) =>
+                b.createdAt.toDate().getTime() - a.createdAt.toDate().getTime()
+            );
+            const initialComments = sortedComments
+              .slice(0, 20)
+              .map((comment) => ({
+                ...comment,
+                uniqueKey: `${comment.id}-${Date.now()}`,
+              }));
+            setDisplayedComments(initialComments);
+            setHasMoreComments(threadData.comments.length > 20);
+            setIsLoadingComments(false);
+          }
+        }
+      },
+      (error) => {
+        console.error('Error listening to thread:', error);
+        showAlert('スレッドの監視中にエラーが発生しました', 'error');
+      }
+    );
+
+    return () => unsubscribe();
   }, [
-    thread,
-    displayedComments.length,
+    id,
+    showAlert,
     setDisplayedComments,
     setHasMoreComments,
     setIsLoadingComments,
+    setThread,
   ]);
 
   // Infinite Scroll の設定
@@ -186,37 +216,9 @@ function ThreadDetail() {
     try {
       if (isParticipating) {
         await leaveOgiriEvent(id, eventId, currentUser.uid);
-
-        setOgiriEvents((prev) =>
-          prev.map((event) => {
-            if (event.id === eventId) {
-              return {
-                ...event,
-                participants: event.participants.filter(
-                  (id) => id !== currentUser.uid
-                ),
-              };
-            }
-            return event;
-          })
-        );
-
         showAlert('大喜利イベントから退出しました', 'info');
       } else {
         await joinOgiriEvent(id, eventId, currentUser.uid);
-
-        setOgiriEvents((prev) =>
-          prev.map((event) => {
-            if (event.id === eventId) {
-              return {
-                ...event,
-                participants: [...(event.participants || []), currentUser.uid],
-              };
-            }
-            return event;
-          })
-        );
-
         showAlert('大喜利イベントに参加しました', 'success');
       }
     } catch (error) {
@@ -225,67 +227,58 @@ function ThreadDetail() {
     }
   };
 
-  // イベントの作成者情報を取得する関数を追加
-  const getEventCreator = async (userId) => {
-    try {
-      const userRef = doc(db, 'users', userId);
-      const userDoc = await getDoc(userRef);
-      if (userDoc.exists()) {
-        return {
-          uid: userId,
-          ...userDoc.data(),
-        };
-      }
-      return null;
-    } catch (error) {
-      console.error('Error fetching event creator:', error);
-      return null;
-    }
-  };
-
-  // 大喜利イベントの取得
+  // 大喜利イベントのリアルタイム監視
   useEffect(() => {
-    const fetchOgiriEvents = async () => {
-      if (!id) return;
+    if (!id) return;
 
+    const eventsRef = collection(db, 'threads', id, 'ogiriEvents');
+    const q = query(eventsRef, orderBy('createdAt', 'desc'));
+
+    const unsubscribe = onSnapshot(q, async (snapshot) => {
       try {
-        setLoadingEvents(true);
-        const events = await getOgiriEvents(id);
-
-        // 各イベントの作成者情報を取得
-        const processedEvents = await Promise.all(
-          events.map(async (event) => {
+        const eventsData = await Promise.all(
+          snapshot.docs.map(async (docSnapshot) => {
+            const eventData = docSnapshot.data();
             let creator = null;
-            if (event.createdBy) {
-              creator = await getEventCreator(event.createdBy);
+
+            if (eventData.createdBy) {
+              // ユーザー情報の取得
+              const userRef = doc(db, 'users', eventData.createdBy);
+              const userSnap = await getDoc(userRef);
+              if (userSnap.exists()) {
+                creator = {
+                  uid: eventData.createdBy,
+                  ...userSnap.data(),
+                };
+              }
             }
-            // creatorが取得できなかった場合のフォールバック
-            if (!creator) {
-              creator = {
-                uid: event.createdBy,
+
+            return {
+              id: docSnapshot.id,
+              ...eventData,
+              createdAt:
+                eventData.createdAt?.toDate?.() ||
+                new Date(eventData.createdAt),
+              creator: creator || {
+                uid: eventData.createdBy,
                 username: '不明なユーザー',
                 photoURL: null,
-              };
-            }
-            return {
-              ...event,
-              createdAt:
-                event.createdAt?.toDate?.() || new Date(event.createdAt),
-              creator: creator,
+              },
             };
           })
         );
 
-        setOgiriEvents(processedEvents);
+        setOgiriEvents(eventsData);
+        setLoadingEvents(false);
       } catch (error) {
-        console.error('Error fetching ogiri events:', error);
-      } finally {
+        console.error('Error processing events:', error);
+        showAlert('イベントの処理中にエラーが発生しました', 'error');
         setLoadingEvents(false);
       }
-    };
+    });
 
-    fetchOgiriEvents();
-  }, [id]);
+    return () => unsubscribe();
+  }, [id, showAlert]);
 
   if (loadingThread) {
     return (
