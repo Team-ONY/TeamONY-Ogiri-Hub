@@ -18,15 +18,15 @@ import { HiPencil } from 'react-icons/hi';
 import { motion } from 'framer-motion';
 import {PropTypes} from 'prop-types';
 
-import avatar1 from '../../assets/icooonavatar/avatar1.png';
-import avatar2 from '../../assets/icooonavatar/avatar2.png';
-import avatar3 from '../../assets/icooonavatar/avatar3.png';
-import avatar4 from '../../assets/icooonavatar/avatar4.png';
-import avatar5 from '../../assets/icooonavatar/avatar5.png';
-import avatar6 from '../../assets/icooonavatar/avatar6.png';
-import avatar7 from '../../assets/icooonavatar/avatar7.png';
-import avatar8 from '../../assets/icooonavatar/avatar8.png';
-import avatar9 from '../../assets/icooonavatar/avatar9.png';
+import avatar1 from '../../assets/icooonavatar/avatar1.svg';
+import avatar2 from '../../assets/icooonavatar/avatar2.svg';
+import avatar3 from '../../assets/icooonavatar/avatar3.svg';
+import avatar4 from '../../assets/icooonavatar/avatar4.svg';
+import avatar5 from '../../assets/icooonavatar/avatar5.svg';
+import avatar6 from '../../assets/icooonavatar/avatar6.svg';
+import avatar7 from '../../assets/icooonavatar/avatar7.svg';
+import avatar8 from '../../assets/icooonavatar/avatar8.svg';
+import avatar9 from '../../assets/icooonavatar/avatar9.svg';
 // 必要に応じて追加
 
 const MotionBox = motion(Box);
