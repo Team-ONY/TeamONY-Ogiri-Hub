@@ -82,7 +82,7 @@ const CreateThreadModal = ({ isOpen, onClose, onThreadCreated }) => {
   const toast = useToast();
 
   // タイトルの最大文字数を設定
-  const MAX_TITLE_LENGTH = 40; // 追加
+  const MAX_TITLE_LENGTH = 30; // 追加
 
   const handleCreateThread = async () => {
     // タイトルが空または文字数超過の場合のエラーチェックを追加
