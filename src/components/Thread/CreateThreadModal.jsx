@@ -89,7 +89,7 @@ const CreateThreadModal = ({ isOpen, onClose, onThreadCreated }) => {
     if (!title || title.length > MAX_TITLE_LENGTH) { // 変更
       toast({
         title: 'エラー',
-        description: `タイトルは${MAX_TITLE_LENGTH}文字以下にしてください。`, // 変更
+        description: `タイトルは１文字以上${MAX_TITLE_LENGTH}文字以下にしてください。`, // 変更
         status: 'error',
         duration: 3000,
         isClosable: true,
@@ -100,7 +100,7 @@ const CreateThreadModal = ({ isOpen, onClose, onThreadCreated }) => {
     if (!content) {
       toast({
         title: 'エラー',
-        description: '内容を入力してください。',
+        description: 'スレッドの内容を入力してください。',
         status: 'error',
         duration: 3000,
         isClosable: true,
