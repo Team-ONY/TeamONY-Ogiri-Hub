@@ -277,10 +277,16 @@ const FileUploadBox = ({ setAttachments }) => (
       filter="drop-shadow(0 0 8px rgba(255, 25, 136, 0.3))"
     />
     <VStack spacing={2}>
-      <Text color="white" fontSize={{ base: 'md', md: 'lg' }}>
-        ファイルをドラッグ&ドロップするか、クリックしてアップロード
+    <Text color="white" fontSize={{ base: 'md', md: 'lg' }} fontWeight="bold">
+        ドラッグ＆ドロップ
+      </Text>
+      <Text color="whiteAlpha.700" fontSize={{ base: 'sm', md: 'md' }}>
+        または クリックしてファイルを選択
       </Text>
     </VStack>
+    <Text color="whiteAlpha.500" fontSize={{ base: 'xs', md: 'sm' }} mt={2}>
+      対応形式: JPG, PNG, GIF, PDF など
+    </Text>
   </Box>
 );
 
