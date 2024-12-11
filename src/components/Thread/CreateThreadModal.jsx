@@ -81,11 +81,26 @@ const CreateThreadModal = ({ isOpen, onClose, onThreadCreated }) => {
   const [attachments, setAttachments] = useState([]);
   const toast = useToast();
 
+  // タイトルの最大文字数を設定
+  const MAX_TITLE_LENGTH = 40; // 追加
+
   const handleCreateThread = async () => {
-    if (!title || !content) {
+    // タイトルが空または文字数超過の場合のエラーチェックを追加
+    if (!title || title.length > MAX_TITLE_LENGTH) { // 変更
       toast({
         title: 'エラー',
-        description: 'タイトルと内容を入力してください。',
+        description: `タイトルは${MAX_TITLE_LENGTH}文字以下にしてください。`, // 変更
+        status: 'error',
+        duration: 3000,
+        isClosable: true,
+      });
+      return;
+    }
+
+    if (!content) {
+      toast({
+        title: 'エラー',
+        description: '内容を入力してください。',
         status: 'error',
         duration: 3000,
         isClosable: true,
@@ -156,6 +171,16 @@ const CreateThreadModal = ({ isOpen, onClose, onThreadCreated }) => {
                 onChange={(e) => setTitle(e.target.value)}
                 {...inputStyles}
               />
+              {/* 現在のタイトル文字数を表示 */}
+              <Text
+                color={
+                  title.length > MAX_TITLE_LENGTH ? 'red.400' : 'whiteAlpha.700'
+                } // 追加
+                fontSize="sm"
+                mt={2}
+              >
+                {title.length}/{MAX_TITLE_LENGTH} 文字
+              </Text>
             </FormSection>
 
             <FormSection icon={FiHash} label="Tags">
@@ -252,16 +277,10 @@ const FileUploadBox = ({ setAttachments }) => (
       filter="drop-shadow(0 0 8px rgba(255, 25, 136, 0.3))"
     />
     <VStack spacing={2}>
-      <Text color="white" fontSize={{ base: 'md', md: 'lg' }} fontWeight="bold">
-        ドラッグ＆ドロップ
-      </Text>
-      <Text color="whiteAlpha.700" fontSize={{ base: 'sm', md: 'md' }}>
-        または クリックしてファイルを選択
+      <Text color="white" fontSize={{ base: 'md', md: 'lg' }}>
+        ファイルをドラッグ&ドロップするか、クリックしてアップロード
       </Text>
     </VStack>
-    <Text color="whiteAlpha.500" fontSize={{ base: 'xs', md: 'sm' }} mt={2}>
-      対応形式: JPG, PNG, GIF, PDF など
-    </Text>
   </Box>
 );
 
