@@ -178,6 +178,8 @@ const CreateThreadModal = ({ isOpen, onClose, onThreadCreated }) => {
                 } // 追加
                 fontSize="sm"
                 mt={2}
+                textAlign="right"
+                ml="auto"
               >
                 {title.length}/{MAX_TITLE_LENGTH} 文字
               </Text>
