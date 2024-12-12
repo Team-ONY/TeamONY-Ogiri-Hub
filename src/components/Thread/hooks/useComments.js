@@ -1,5 +1,4 @@
 import { useState, useCallback, useEffect } from 'react';
-import { Timestamp } from 'firebase/firestore';
 import {
   addCommentToThread,
   deleteCommentFromThread,
@@ -42,17 +41,6 @@ export const useComments = (threadId, thread, setThread, currentUser) => {
 
       try {
         const { uid: userId, displayName, photoURL } = currentUser;
-        const createdAt = Timestamp.now();
-        const newComment = {
-          id: createdAt.toMillis().toString(),
-          text: commentText,
-          createdAt,
-          createdBy: userId,
-          createdByUsername: displayName,
-          userPhotoURL: photoURL,
-          isAdmin: thread.createdBy === userId,
-          uniqueKey: `${createdAt.toMillis().toString()}-new`,
-        };
 
         await addCommentToThread(
           threadId,
@@ -64,17 +52,12 @@ export const useComments = (threadId, thread, setThread, currentUser) => {
 
         setIsNewCommentAdded(true);
         setError('');
-
-        setThread((prevThread) => ({
-          ...prevThread,
-          comments: [newComment, ...(prevThread.comments || [])],
-        }));
       } catch (error) {
         console.error('Error adding comment:', error);
         setError('コメントの追加中にエラーが発生しました。');
       }
     },
-    [threadId, thread, currentUser, setThread]
+    [threadId, currentUser]
   );
 
   const handleDeleteComment = useCallback(
