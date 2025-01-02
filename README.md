@@ -1,61 +1,100 @@
-# TeamONY Ogiri Hub
+# Ogiri Hub
 
-## 概要
+## 📝 概要
 
-このプロジェクトは、ReactとViteを使用して構築された大喜利掲示板Webアプリケーションです。
+大喜利ハブは、オンラインで大喜利を楽しむためのWebアプリケーションです。ユーザーは大喜利のお題を投稿したり、他のユーザーのお題に回答したりすることができます。
 
-## セットアップ
+### 🌟 主な機能
 
-### 必要条件
+- 🎭 大喜利スレッドの作成・参加
+- 🎨 テキストまたはAI画像生成によるお題の投稿
+- ⚡️ リアルタイムでの回答投稿
+- 💝 いいね機能
+- 👑 ベストアンサーの選定
+- 🎪 ユーザープロフィール
+- 🏆 バッジシステム
 
-- Node.js 18以上
+## 🛠️ 技術スタック
 
-### インストール
+- **✨ フロントエンド**
 
-1. リポジトリをクローンします。
+  - 🌈 React 18
+  - ⚡️ Vite
+  - 💫 Chakra UI
+  - 🎭 Framer Motion
 
-   ```bash
-   git clone https://github.com/your-repo/teamony-ogiri-hub.git
-   ```
+- **🏰 バックエンド**
+  - 🔥 Firebase
+    - 🔐 Authentication
+    - 📦 Firestore
+    - 💾 Storage
 
-2. ディレクトリに移動します。
+## 🚀 開発環境のセットアップ
 
-   ```bash
-   cd teamony-ogiri-hub
-   ```
+1. リポジトリのクローン:
 
-3. 依存関係をインストールします。
+```bash
+git clone https://github.com/Team-ONY/TeamONY-Ogiri-Hub.git
+```
 
-   ```bash
-   npm install
-   ```
+2. 依存関係のインストール:
 
-### 開発サーバーの起動
+```bash
+cd ogiri-hub
+npm install
+```
 
-    以下のコマンドで開発サーバーを起動します。
+3. 環境変数の設定:
+   開発チームのDiscordにてオーナーから共有される環境変数を`.env.local`ファイルに設定してください。
 
-    ```bash
-    npm install
-    ```
+4. 開発サーバーの起動:
 
-    ブラウザで `http://localhost:5173` にアクセスしてアプリケーションを確認できます。
+```bash
+npm run dev
+```
 
-## スクリプト
+## 🌿 開発フロー
 
-- `npm run dev`: 開発サーバーを起動します。
-- `npm run build`: プロダクションビルドを作成します。
-- `npm run lint`: ESLintを使用してコードをチェックします。
-- `npm run format`: Prettierを使用してコードをフォーマットします。
+1. 🌱 mainブランチから作業ブランチを作成
+2. 💻 実装・テストの実施
+3. 🎯 プルリクエストの作成
+4. 👀 コードレビュー
+5. 🚀 mainブランチへのマージ
 
-## ディレクトリ構造
+### 🌸 ブランチ命名規則
 
-- `src/`: ソースコードが含まれています。
-- `public/`: 公開用の静的ファイルが含まれています。
-- `.github/`: GitHub関連の設定ファイルが含まれています。
+```
+<作業prefix>/#<Issue番号>_<変更内容>
+```
 
-## 使用技術 (現時点)
+例）
 
-- **React**: UIライブラリ
-- **Vite**: フロントエンドビルドツール
-- **Chakra UI**: UIコンポーネントライブラリ
-- **Firebase**: バックエンドサービス
+- ✨ `feat/#123_add-ogiri-event`
+- 🐛 `fix/#45_auth-error`
+- 📝 `docs/#67_update-readme`
+
+### 🎀 コミットメッセージ規則
+
+```
+<作業prefix>: <変更内容を表すアイコン> <変更内容を日本語で>
+```
+
+例）
+
+- `feat: ✨ 大喜利イベント作成機能を実装`
+- `fix: 🐛 認証エラーを修正`
+- `docs: 📝 READMEを更新`
+- `refactor: ♻️ コードの重複を削除`
+- `style: 🎨 フォーマットを修正`
+
+## 🔍 テスト
+
+```bash
+npm run test        # ✨ テストの実行
+npm run lint        # 🎯 リントチェック
+npm run format      # 🎨 コードフォーマット
+```
+
+## 👥 開発チーム
+
+✨ TeamONY ✨
