@@ -13,6 +13,7 @@ import {
   Textarea,
   useDisclosure,
   Collapse,
+  IconButton,
 } from '@chakra-ui/react';
 import { motion } from 'framer-motion';
 import {
@@ -22,6 +23,7 @@ import {
   FiCheck,
   FiChevronUp,
   FiChevronDown,
+  FiTrash2,
 } from 'react-icons/fi';
 import PropTypes from 'prop-types';
 import { useState, useEffect } from 'react';
@@ -33,6 +35,7 @@ import {
   getBestAnswer,
   checkEventExpirationAndSetBestAnswer,
   calculateRemainingTime,
+  deleteOgiriEvent,
 } from '../../../services/ogiriService';
 import OgiriAnswers from './OgiriAnswers';
 import { useAlert } from '../../../hooks/useAlert';
@@ -53,6 +56,7 @@ const OgiriEvent = ({ event, creator, onJoinEvent, currentUser }) => {
   const [bestAnswerId, setBestAnswerId] = useState(null);
   const { showAlert } = useAlert();
   const [remainingTime, setRemainingTime] = useState('');
+  const isAdmin = currentUser?.uid === event.createdBy;
 
   useEffect(() => {
     setIsParticipating(event.participants?.includes(currentUser?.uid) || false);
@@ -233,6 +237,18 @@ const OgiriEvent = ({ event, creator, onJoinEvent, currentUser }) => {
       setAnswers(updatedAnswers);
     } catch (error) {
       console.error('Error toggling like:', error);
+    }
+  };
+
+  const handleDeleteEvent = async () => {
+    if (!isAdmin) return;
+
+    try {
+      await deleteOgiriEvent(event.threadId, event.id);
+      showAlert('大喜利イベントを削除しました', 'success');
+    } catch (error) {
+      console.error('Error deleting event:', error);
+      showAlert('削除に失敗しました', 'error');
     }
   };
 
@@ -534,6 +550,24 @@ const OgiriEvent = ({ event, creator, onJoinEvent, currentUser }) => {
             </VStack>
           </Collapse>
         </Box>
+
+        {isAdmin && isExpired && (
+          <IconButton
+            icon={<FiTrash2 />}
+            variant="ghost"
+            colorScheme="red"
+            size="sm"
+            onClick={handleDeleteEvent}
+            aria-label="イベントを削除"
+            position="absolute"
+            top={4}
+            right={4}
+            _hover={{
+              bg: 'red.500',
+              color: 'white',
+            }}
+          />
+        )}
       </Flex>
     </MotionBox>
   );
@@ -554,6 +588,7 @@ OgiriEvent.propTypes = {
     selectedImage: PropTypes.string,
     status: PropTypes.string,
     maxResponses: PropTypes.number,
+    createdBy: PropTypes.string.isRequired,
   }).isRequired,
   creator: PropTypes.object.isRequired,
   onJoinEvent: PropTypes.func.isRequired,
