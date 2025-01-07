@@ -15,6 +15,7 @@ import {
   createOgiriEvent,
   joinOgiriEvent,
   leaveOgiriEvent,
+  cleanupOldEvents,
 } from '../../services/ogiriService';
 import {
   doc,
@@ -236,13 +237,18 @@ function ThreadDetail() {
 
     const unsubscribe = onSnapshot(q, async (snapshot) => {
       try {
+        // 古いイベントのクリーンアップを条件付きで実行
+        if (snapshot.docChanges().some((change) => change.type === 'added')) {
+          // 新しいイベントが追加された時のみクリーンアップを実行
+          await cleanupOldEvents(id);
+        }
+
         const eventsData = await Promise.all(
           snapshot.docs.map(async (docSnapshot) => {
             const eventData = docSnapshot.data();
             let creator = null;
 
             if (eventData.createdBy) {
-              // ユーザー情報の取得
               const userRef = doc(db, 'users', eventData.createdBy);
               const userSnap = await getDoc(userRef);
               if (userSnap.exists()) {
@@ -334,6 +340,7 @@ function ThreadDetail() {
                 creator={event.creator}
                 onJoinEvent={() => handleJoinEvent(event.id)}
                 currentUser={currentUser}
+                thread={thread}
               />
             ))
           )}

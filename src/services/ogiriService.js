@@ -13,6 +13,7 @@ import {
   getDoc,
   orderBy,
   onSnapshot,
+  deleteDoc,
 } from 'firebase/firestore';
 
 //
@@ -410,4 +411,37 @@ export const subscribeToOgiriEvent = (threadId, eventId, callback) => {
       });
     }
   });
+};
+
+// 大喜利イベントを削除
+export const deleteOgiriEvent = async (threadId, eventId) => {
+  try {
+    const eventRef = doc(db, 'threads', threadId, 'ogiriEvents', eventId);
+    await deleteDoc(eventRef);
+  } catch (error) {
+    console.error('Error deleting ogiri event:', error);
+    throw error;
+  }
+};
+
+// 古い大喜利イベントを自動削除
+export const cleanupOldEvents = async (threadId) => {
+  try {
+    const eventsRef = collection(db, 'threads', threadId, 'ogiriEvents');
+    const q = query(eventsRef, orderBy('createdAt', 'desc'));
+    const snapshot = await getDocs(q);
+
+    const events = snapshot.docs;
+    if (events.length > 3) {
+      const eventsToDelete = events.slice(3);
+      await Promise.all(
+        eventsToDelete.map(async (event) => {
+          await deleteDoc(event.ref);
+        })
+      );
+    }
+  } catch (error) {
+    console.error('Error cleaning up old events:', error);
+    throw error;
+  }
 };
