@@ -80,9 +80,11 @@ const CreateThreadModal = ({ isOpen, onClose, onThreadCreated }) => {
   const [tags, setTags] = useState([]);
   const [attachments, setAttachments] = useState([]);
   const toast = useToast();
+  const [inputValue, setInputValue] = useState('');
 
-  // タイトルの最大文字数を設定
-  const MAX_TITLE_LENGTH = 30; // 追加
+  const MAX_TITLE_LENGTH = 30;
+  const MAX_TAG_LENGTH = 30;
+  const MAX_TAGS_COUNT = 5;
 
   const handleCreateThread = async () => {
     // タイトルが空または文字数超過の場合のエラーチェックを追加
@@ -90,6 +92,32 @@ const CreateThreadModal = ({ isOpen, onClose, onThreadCreated }) => {
       toast({
         title: 'エラー',
         description: `タイトルは１文字以上${MAX_TITLE_LENGTH}文字以下にしてください。`, // 変更
+        status: 'error',
+        duration: 3000,
+        isClosable: true,
+      });
+      return;
+    }
+
+    // タグの検証を追加
+    /*1. タグの配列(tags)の長さをチェック、MAX_TAGS_COUNT(5個)より大きいならエラー*/
+    if (tags.length > MAX_TAGS_COUNT) {
+      toast({
+        title: 'エラー',
+        description: `タグは${MAX_TAGS_COUNT}個までです。`,
+        status: 'error',
+        duration: 3000,
+        isClosable: true,
+      });
+      return;
+    }
+    //タグ文字数
+    //2. 各タグの文字数をチェック、filterで30文字超のタグを抽出。１つでも存在すればエラー。
+    const longTags = tags.filter(tag => tag.length > MAX_TAG_LENGTH);
+    if (longTags.length > 0) {
+      toast({
+        title: 'エラー',
+        description: `タグは${MAX_TAG_LENGTH}文字以下にしてください。`,
         status: 'error',
         duration: 3000,
         isClosable: true,
@@ -188,62 +216,32 @@ const CreateThreadModal = ({ isOpen, onClose, onThreadCreated }) => {
             <FormSection icon={FiHash} label="Tags">
               <MotionInput
                 placeholder="タグをカンマ区切りで入力 (例: 質問, 相談, 雑談)"
-                value={tags.join(',')}
+                value={inputValue} // 入力中の文字列をそのまま表示
                 onChange={(e) => {
-                  const rawInput = e.target.value;
-                  const inputTags = rawInput
-                    .split(',') // カンマで分割
-                    .map((tag) => tag.trim()) // 各タグをトリム
-                    .filter((tag) => tag.length <= 30); // 30文字を超えるタグを除外 タグの文字数を調整するときはこことトーストの部分ををいじる
+                  const currentInput = e.target.value;
+                  setInputValue(currentInput); // 入力値を保持
 
-                  if (rawInput.trim() === '' || rawInput == ',') {
-                    // 入力が空の場合またはカンマだけの場合、tagsをリセット
-                    setTags([]);
-                  } else if (inputTags.length <= 5) {
-                    // タグが5以下の間ならタグを追加する タグ数を調節するときはこことトーストの部分をいじる
-                    setTags(inputTags);
-                  } else {
-                    //タグ数超過の警告
-                    const toastId = 'tag-count-error';
-                    if (!toast.isActive(toastId)) {
-                      toast({
-                        id: toastId,
-                        title: 'エラー', //タグの制限
-                        description: 'タグは最大5個まで入力できます。',
-                        status: 'error',
-                        duration: 3000,
-                        isClosable: true,
-                      });
-                    }
-                    return;
-                  }
-
-                  //タグの文字数超過の警告
-                  if (
-                    e.target.value
-                      .split(',')
-                      .some((tag) => tag.trim().length > 30)
-                  ) {
-                    const toastId2 = 'tag-length-error';
-                    if (!toast.isActive(toastId2)) {
-                      toast({
-                        id: toastId2,
-                        title: 'タグの文字数制限',
-                        description: 'タグは30文字以下で入力してください。',
-                        status: 'warning',
-                        duration: 3000,
-                        isClosable: true,
-                      });
-                    }
-                    return;
-                  }
+                  // タグの処理
+                  const newTags = currentInput
+                    .split(',')
+                    .map(tag => tag.trim())
+                    .filter(tag => tag !== '')
+                  setTags(newTags);
                 }}
                 {...inputStyles}
               />
               {/* タグの入力状況を表示 */}
-              <Text mt={2} fontSize="sm" color="gray.400" textAlign="right">
+              <Text
+                color={
+                  tags.length >= MAX_TAGS_COUNT ? 'red.400' : 'whiteAlpha.700'
+                } // 追加 
+                mt={2} 
+                fontSize="sm" 
+                textAlign="right"
+              >                
                 {tags.length}/5
               </Text>
+
             </FormSection>
 
             <FormSection icon={FiPaperclip} label="Attachments">
@@ -329,7 +327,7 @@ const FileUploadBox = ({ setAttachments }) => (
       filter="drop-shadow(0 0 8px rgba(255, 25, 136, 0.3))"
     />
     <VStack spacing={2}>
-    <Text color="white" fontSize={{ base: 'md', md: 'lg' }} fontWeight="bold">
+      <Text color="white" fontSize={{ base: 'md', md: 'lg' }} fontWeight="bold">
         ドラッグ＆ドロップ
       </Text>
       <Text color="whiteAlpha.700" fontSize={{ base: 'sm', md: 'md' }}>
