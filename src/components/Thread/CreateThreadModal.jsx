@@ -80,15 +80,14 @@ const CreateThreadModal = ({ isOpen, onClose, onThreadCreated }) => {
   const [tags, setTags] = useState([]);
   const [attachments, setAttachments] = useState([]);
   const toast = useToast();
-  const [inputValue, setInputValue] = useState(''); //追加
+  const [inputValue, setInputValue] = useState('');
 
-  // 定数の追加
-  const MAX_TITLE_LENGTH = 30; // 追加
-  const MAX_TAG_LENGTH = 30;  // 追加
-  const MAX_TAGS_COUNT = 5;   // 追加
+  const MAX_TITLE_LENGTH = 30;
+  const MAX_TAG_LENGTH = 30;
+  const MAX_TAGS_COUNT = 5;
 
   const handleCreateThread = async () => {
-    // タイトルが空または文字数超過の場合のエラーチェックを追加
+    // タイトルが空または文字数超過の場合のエラーチェックを追加     コミットメッセージchoreこのフィックスを使う
     if (!title || title.length > MAX_TITLE_LENGTH) { // 変更
       toast({
         title: 'エラー',
@@ -101,6 +100,7 @@ const CreateThreadModal = ({ isOpen, onClose, onThreadCreated }) => {
     }
 
     // タグの検証を追加
+    /*1. タグの配列(tags)の長さをチェック、MAX_TAGS_COUNT(5個)以上ならエラー*/
     if (tags.length >= MAX_TAGS_COUNT) {
       toast({
         title: 'エラー',
@@ -112,6 +112,7 @@ const CreateThreadModal = ({ isOpen, onClose, onThreadCreated }) => {
       return;
     }
     //タグ文字数
+    //2. 各タグの文字数をチェック、filterで30文字超のタグを抽出。１つでも存在すればエラー。
     const longTags = tags.filter(tag => tag.length > MAX_TAG_LENGTH);
     if (longTags.length > 0) {
       toast({
