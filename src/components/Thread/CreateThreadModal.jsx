@@ -87,7 +87,7 @@ const CreateThreadModal = ({ isOpen, onClose, onThreadCreated }) => {
   const MAX_TAGS_COUNT = 5;
 
   const handleCreateThread = async () => {
-    // タイトルが空または文字数超過の場合のエラーチェックを追加     コミットメッセージchoreこのフィックスを使う
+    // タイトルが空または文字数超過の場合のエラーチェックを追加
     if (!title || title.length > MAX_TITLE_LENGTH) { // 変更
       toast({
         title: 'エラー',
