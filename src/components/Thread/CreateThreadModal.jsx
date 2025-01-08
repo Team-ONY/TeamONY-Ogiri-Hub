@@ -100,8 +100,8 @@ const CreateThreadModal = ({ isOpen, onClose, onThreadCreated }) => {
     }
 
     // タグの検証を追加
-    /*1. タグの配列(tags)の長さをチェック、MAX_TAGS_COUNT(5個)以上ならエラー*/
-    if (tags.length >= MAX_TAGS_COUNT) {
+    /*1. タグの配列(tags)の長さをチェック、MAX_TAGS_COUNT(5個)より大きいならエラー*/
+    if (tags.length > MAX_TAGS_COUNT) {
       toast({
         title: 'エラー',
         description: `タグは${MAX_TAGS_COUNT}個までです。`,
@@ -226,7 +226,6 @@ const CreateThreadModal = ({ isOpen, onClose, onThreadCreated }) => {
                     .split(',')
                     .map(tag => tag.trim())
                     .filter(tag => tag !== '')
-                    .slice(0, MAX_TAGS_COUNT); // タグ数を制限
                   setTags(newTags);
                 }}
                 {...inputStyles}
