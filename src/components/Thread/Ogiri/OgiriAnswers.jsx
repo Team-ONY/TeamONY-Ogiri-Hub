@@ -10,7 +10,6 @@ import {
   Badge,
   Spacer,
 } from '@chakra-ui/react';
-import { FiClock } from 'react-icons/fi';
 import { motion } from 'framer-motion';
 import PropTypes from 'prop-types';
 import { useState, useEffect } from 'react';
