@@ -85,7 +85,7 @@ const OgiriEvent = ({ event, creator, onJoinEvent, currentUser, thread }) => {
   }, [event.participants]);
 
   useEffect(() => {
-    if (!event.id || !isAnswersOpen) return;
+    if (!event.id || !isAnswersOpen || !isExpired) return;
 
     const answersRef = collection(
       db,
@@ -113,7 +113,7 @@ const OgiriEvent = ({ event, creator, onJoinEvent, currentUser, thread }) => {
     );
 
     return () => unsubscribe();
-  }, [event.id, event.threadId, isAnswersOpen]);
+  }, [event.id, event.threadId, isAnswersOpen, isExpired]);
 
   useEffect(() => {
     const checkExpirationAndBestAnswer = async () => {
@@ -593,28 +593,46 @@ const OgiriEvent = ({ event, creator, onJoinEvent, currentUser, thread }) => {
             )}
 
             <Box mt={4}>
-              <Button
-                onClick={toggleAnswers}
-                variant="ghost"
-                color="whiteAlpha.800"
-                width="100%"
-                rightIcon={
-                  <Icon as={isAnswersOpen ? FiChevronUp : FiChevronDown} />
-                }
-              >
-                回答を{isAnswersOpen ? '閉じる' : '見る'}
-              </Button>
-              <Collapse in={isAnswersOpen}>
-                <VStack spacing={4} mt={4}>
-                  <OgiriAnswers
-                    answers={answers}
-                    currentUser={currentUser}
-                    onLike={handleLike}
-                    bestAnswerId={bestAnswerId}
-                    isExpired={isExpired}
-                  />
-                </VStack>
-              </Collapse>
+              {isExpired ? (
+                <>
+                  <Button
+                    onClick={toggleAnswers}
+                    variant="ghost"
+                    color="whiteAlpha.800"
+                    width="100%"
+                    rightIcon={
+                      <Icon as={isAnswersOpen ? FiChevronUp : FiChevronDown} />
+                    }
+                  >
+                    回答を{isAnswersOpen ? '閉じる' : '見る'}
+                  </Button>
+                  <Collapse in={isAnswersOpen}>
+                    <VStack spacing={4} mt={4}>
+                      <OgiriAnswers
+                        answers={answers}
+                        currentUser={currentUser}
+                        onLike={handleLike}
+                        bestAnswerId={bestAnswerId}
+                        isExpired={isExpired}
+                      />
+                    </VStack>
+                  </Collapse>
+                </>
+              ) : (
+                <Box
+                  p={4}
+                  bg="whiteAlpha.100"
+                  borderRadius="xl"
+                  textAlign="center"
+                >
+                  <HStack spacing={2} justify="center">
+                    <Icon as={FiClock} color="pink.300" />
+                    <Text color="whiteAlpha.800">
+                      回答は制限時間終了後に公開されます
+                    </Text>
+                  </HStack>
+                </Box>
+              )}
             </Box>
           </Flex>
         </Box>
