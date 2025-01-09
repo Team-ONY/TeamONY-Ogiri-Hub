@@ -52,7 +52,7 @@ const JoinedThreadCard = ({ threads, user }) => (
           <HStack justify="space-between" align="start">
             {/* タイトル */}
             <VStack align="start" spacing={1}>
-              <Text color="white" fontWeight="bold">
+              <Text bgGradient="linear(to-r, pink.400, purple.400)" bgClip="text" fontWeight="bold">
                 {thread.title}
               </Text>
               {/*スレッドコメント*/}
