@@ -4,28 +4,24 @@ import {
   Text,
   Avatar,
   IconButton,
+  Icon,
   Box,
   Flex,
   Badge,
+  Spacer,
 } from '@chakra-ui/react';
-import { FiHeart, FiClock } from 'react-icons/fi';
 import { motion } from 'framer-motion';
 import PropTypes from 'prop-types';
 import { useState, useEffect } from 'react';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../../../config/firebase';
+import { FaHeart, FaRegHeart } from 'react-icons/fa';
 
 const MotionBox = motion(Box);
 
 const OgiriAnswer = ({ answer, user, onLike, isLiked, isBestAnswer }) => {
-  const formattedDate = new Date(
-    answer.createdAt?.toDate?.() || answer.createdAt
-  ).toLocaleString('ja-JP', {
-    month: 'short',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
+  const displayName = user?.username || '名無しさん';
+  const userId = user?.email ? user.email.split('@')[0] : 'unknown';
 
   return (
     <MotionBox
@@ -69,19 +65,24 @@ const OgiriAnswer = ({ answer, user, onLike, isLiked, isBestAnswer }) => {
           <Avatar
             size="md"
             src={user?.photoURL}
-            name={user?.username}
+            name={displayName}
             border="2px solid"
             borderColor={isLiked ? 'pink.400' : 'whiteAlpha.200'}
           />
-          <Box flex={1}>
-            <Text fontWeight="bold" color="white" fontSize="md">
-              {user?.username || '読み込み中...'}
+          <VStack align="start" spacing={0}>
+            <Text
+              bgGradient="linear(to-r, purple.400, pink.400)"
+              bgClip="text"
+              fontSize="lg"
+              fontWeight="bold"
+            >
+              {displayName}
             </Text>
-            <HStack spacing={2} color="whiteAlpha.600" fontSize="xs">
-              <FiClock />
-              <Text>{formattedDate}</Text>
-            </HStack>
-          </Box>
+            <Text color="whiteAlpha.600" fontSize="sm">
+              @{userId}
+            </Text>
+          </VStack>
+          <Spacer />
           <Flex
             align="center"
             bg={isLiked ? 'whiteAlpha.200' : 'transparent'}
@@ -90,24 +91,14 @@ const OgiriAnswer = ({ answer, user, onLike, isLiked, isBestAnswer }) => {
             transition="all 0.2s"
           >
             <IconButton
-              icon={<FiHeart fill={isLiked ? '#FF1493' : 'none'} />}
+              icon={<Icon as={isLiked ? FaHeart : FaRegHeart} />}
+              onClick={onLike}
               variant="ghost"
+              colorScheme="pink"
               size="sm"
-              color={isLiked ? 'pink.400' : 'whiteAlpha.600'}
-              onClick={() => onLike(answer.id)}
-              aria-label="Like"
-              _hover={{
-                bg: 'whiteAlpha.100',
-                transform: 'scale(1.1)',
-              }}
-              transition="all 0.2s"
+              isRound
             />
-            <Text
-              color={isLiked ? 'pink.400' : 'whiteAlpha.600'}
-              fontSize="sm"
-              ml={1}
-              fontWeight="bold"
-            >
+            <Text color="white" fontSize="sm" ml={2}>
               {answer.likes || 0}
             </Text>
           </Flex>
@@ -175,7 +166,7 @@ const OgiriAnswers = ({ answers, currentUser, onLike, bestAnswerId }) => {
               uid: answer.userId,
             }
           }
-          onLike={onLike}
+          onLike={() => onLike(answer.id)}
           isLiked={answer.likedBy?.includes(currentUser?.uid)}
           isBestAnswer={answer.id === bestAnswerId}
         />
