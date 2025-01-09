@@ -19,7 +19,6 @@ export const CommentItem = memo(
         borderRadius="xl"
         width="100%"
         style={{ boxSizing: 'border-box' }}
-        mx="auto"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3 }}

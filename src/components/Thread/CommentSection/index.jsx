@@ -29,7 +29,8 @@ export const CommentSection = ({
       spacing={4}
       align="stretch"
       mt={6}
-      width={{ base: '100%', md: '80%' }}
+      width="100%"
+      maxWidth="900px"
       mx="auto"
     >
       {comments.length > 0 ? (
