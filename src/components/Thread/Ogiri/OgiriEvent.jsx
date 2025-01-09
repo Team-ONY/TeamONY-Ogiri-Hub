@@ -58,6 +58,7 @@ const OgiriEvent = ({ event, creator, onJoinEvent, currentUser, thread }) => {
   const [remainingTime, setRemainingTime] = useState('');
   const isAdmin = currentUser?.uid === thread?.createdBy;
   const { isOpen, onOpen, onClose } = useDisclosure();
+  const isMac = /Mac|iPod|iPhone|iPad/.test(navigator.platform);
 
   console.log({
     currentUserId: currentUser?.uid,
@@ -263,6 +264,13 @@ const OgiriEvent = ({ event, creator, onJoinEvent, currentUser, thread }) => {
     } catch (error) {
       console.error('Error deleting event:', error);
       showAlert('削除に失敗しました', 'error');
+    }
+  };
+
+  const handleKeyPress = (e) => {
+    if (e.key === 'Enter' && ((isMac && e.metaKey) || (!isMac && e.ctrlKey))) {
+      e.preventDefault();
+      handleSubmitAnswer();
     }
   };
 
@@ -538,7 +546,8 @@ const OgiriEvent = ({ event, creator, onJoinEvent, currentUser, thread }) => {
                     <Textarea
                       value={answer}
                       onChange={(e) => setAnswer(e.target.value)}
-                      placeholder="回答を入力..."
+                      onKeyDown={handleKeyPress}
+                      placeholder={`回答を入力... (${isMac ? 'Cmd' : 'Ctrl'} + Enterで送信)`}
                       bg="whiteAlpha.50"
                       border="none"
                       color="white"
