@@ -21,15 +21,6 @@ import { FaHeart, FaRegHeart } from 'react-icons/fa';
 const MotionBox = motion(Box);
 
 const OgiriAnswer = ({ answer, user, onLike, isLiked, isBestAnswer }) => {
-  const formattedDate = new Date(
-    answer.createdAt?.toDate?.() || answer.createdAt
-  ).toLocaleString('ja-JP', {
-    month: 'short',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
-
   const displayName = user?.username || '名無しさん';
   const userId = user?.email ? user.email.split('@')[0] : 'unknown';
 
