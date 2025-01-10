@@ -188,7 +188,7 @@ const CreateThreadModal = ({ isOpen, onClose, onThreadCreated }) => {
             Create New Thread
           </Heading>
         </ModalHeader>
-        <ModalCloseButton />
+        <ModalCloseButton color = 'whiteAlpha.700'/>
 
         <ModalBody>
           <VStack spacing={{ base: 6, md: 8 }} align="stretch">
