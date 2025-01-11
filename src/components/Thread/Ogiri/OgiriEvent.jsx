@@ -734,36 +734,6 @@ const OgiriEvent = ({ event, creator, onJoinEvent, currentUser, thread }) => {
     }
   };
 
-  const handleLike = async (answerId) => {
-    if (!currentUser) return;
-
-    try {
-      await toggleAnswerLike(
-        event.threadId,
-        event.id,
-        answerId,
-        currentUser.uid
-      );
-      // 回答リストを更新
-      const updatedAnswers = answers.map((ans) => {
-        if (ans.id === answerId) {
-          const isLiked = ans.likedBy?.includes(currentUser.uid);
-          return {
-            ...ans,
-            likes: isLiked ? ans.likes - 1 : ans.likes + 1,
-            likedBy: isLiked
-              ? ans.likedBy.filter((id) => id !== currentUser.uid)
-              : [...(ans.likedBy || []), currentUser.uid],
-          };
-        }
-        return ans;
-      });
-      setAnswers(updatedAnswers);
-    } catch (error) {
-      console.error('Error toggling like:', error);
-    }
-  };
-
   const handleDeleteEvent = () => {
     if (!isAdmin) {
       showAlert('管理者のみイベントを削除できます', 'error');
