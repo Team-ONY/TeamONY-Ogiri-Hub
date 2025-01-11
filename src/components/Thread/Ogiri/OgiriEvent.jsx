@@ -1129,105 +1129,107 @@ const OgiriEvent = ({ event, creator, onJoinEvent, currentUser, thread }) => {
                   status: event.status,
                 }) ? (
                   <>
-                    {isEventExpired && mostVotedAnswer && (
-                      <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.4 }}
-                        style={{ width: '100%' }}
-                      >
-                        <Box
-                          bg="rgba(0, 0, 0, 0.3)"
-                          backdropFilter="blur(16px)"
-                          borderRadius="2xl"
-                          overflow="hidden"
-                          position="relative"
-                          border="1px solid"
-                          borderColor="pink.500"
-                          boxShadow="0 4px 30px rgba(236, 72, 153, 0.1)"
-                          mb={6}
+                    {isEventExpired &&
+                      mostVotedAnswer &&
+                      mostVotedAnswer.id === bestAnswerId && (
+                        <motion.div
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ duration: 0.4 }}
+                          style={{ width: '100%' }}
                         >
                           <Box
-                            position="absolute"
-                            top={0}
-                            left={0}
-                            right={0}
-                            height="3px"
-                            bgGradient={gradient}
-                          />
-                          <Box p={6}>
-                            <VStack spacing={4} align="stretch">
-                              <HStack spacing={3} justify="space-between">
-                                <HStack>
-                                  <Icon
-                                    as={FiAward}
-                                    color="pink.300"
-                                    w={5}
-                                    h={5}
-                                  />
-                                  <Text
-                                    bgGradient={gradient}
-                                    bgClip="text"
-                                    fontSize="lg"
-                                    fontWeight="bold"
+                            bg="rgba(0, 0, 0, 0.3)"
+                            backdropFilter="blur(16px)"
+                            borderRadius="2xl"
+                            overflow="hidden"
+                            position="relative"
+                            border="1px solid"
+                            borderColor="pink.500"
+                            boxShadow="0 4px 30px rgba(236, 72, 153, 0.1)"
+                            mb={6}
+                          >
+                            <Box
+                              position="absolute"
+                              top={0}
+                              left={0}
+                              right={0}
+                              height="3px"
+                              bgGradient={gradient}
+                            />
+                            <Box p={6}>
+                              <VStack spacing={4} align="stretch">
+                                <HStack spacing={3} justify="space-between">
+                                  <HStack>
+                                    <Icon
+                                      as={FiAward}
+                                      color="pink.300"
+                                      w={5}
+                                      h={5}
+                                    />
+                                    <Text
+                                      bgGradient={gradient}
+                                      bgClip="text"
+                                      fontSize="lg"
+                                      fontWeight="bold"
+                                    >
+                                      最多投票回答 🏆
+                                    </Text>
+                                  </HStack>
+                                  <Badge
+                                    colorScheme="pink"
+                                    variant="solid"
+                                    px={3}
+                                    py={1}
+                                    borderRadius="full"
                                   >
-                                    最多投票回答 🏆
-                                  </Text>
+                                    {mostVotedAnswer.voteCount || 0} 票
+                                  </Badge>
                                 </HStack>
-                                <Badge
-                                  colorScheme="pink"
-                                  variant="solid"
-                                  px={3}
-                                  py={1}
-                                  borderRadius="full"
-                                >
-                                  {mostVotedAnswer.voteCount || 0} 票
-                                </Badge>
-                              </HStack>
 
-                              <Box
-                                bg="whiteAlpha.100"
-                                p={4}
-                                borderRadius="xl"
-                                border="1px solid"
-                                borderColor="whiteAlpha.200"
-                              >
-                                <Text
-                                  color="white"
-                                  fontSize="xl"
-                                  fontWeight="medium"
-                                  lineHeight="tall"
+                                <Box
+                                  bg="whiteAlpha.100"
+                                  p={4}
+                                  borderRadius="xl"
+                                  border="1px solid"
+                                  borderColor="whiteAlpha.200"
                                 >
-                                  {mostVotedAnswer.content}
-                                </Text>
-                              </Box>
-
-                              <HStack spacing={3}>
-                                <Avatar
-                                  size="md"
-                                  src={mostVotedAnswer.photoURL}
-                                  name={mostVotedAnswer.username}
-                                  border="2px solid"
-                                  borderColor="pink.400"
-                                />
-                                <VStack align="start" spacing={0}>
                                   <Text
-                                    bgGradient={gradient}
-                                    bgClip="text"
-                                    fontWeight="bold"
+                                    color="white"
+                                    fontSize="xl"
+                                    fontWeight="medium"
+                                    lineHeight="tall"
                                   >
-                                    {mostVotedAnswer.username}
+                                    {mostVotedAnswer.content}
                                   </Text>
-                                  <Text color="whiteAlpha.600" fontSize="sm">
-                                    @{getUserId(mostVotedAnswer.userId)}
-                                  </Text>
-                                </VStack>
-                              </HStack>
-                            </VStack>
+                                </Box>
+
+                                <HStack spacing={3}>
+                                  <Avatar
+                                    size="md"
+                                    src={mostVotedAnswer.photoURL}
+                                    name={mostVotedAnswer.username}
+                                    border="2px solid"
+                                    borderColor="pink.400"
+                                  />
+                                  <VStack align="start" spacing={0}>
+                                    <Text
+                                      bgGradient={gradient}
+                                      bgClip="text"
+                                      fontWeight="bold"
+                                    >
+                                      {mostVotedAnswer.username}
+                                    </Text>
+                                    <Text color="whiteAlpha.600" fontSize="sm">
+                                      @{getUserId(mostVotedAnswer.userId)}
+                                    </Text>
+                                  </VStack>
+                                </HStack>
+                              </VStack>
+                            </Box>
                           </Box>
-                        </Box>
-                      </motion.div>
-                    )}
+                        </motion.div>
+                      )}
                     {renderLiveAnswers()}
                   </>
                 ) : isParticipating ? (
