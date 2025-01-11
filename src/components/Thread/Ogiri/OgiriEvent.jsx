@@ -33,8 +33,6 @@ import PropTypes from 'prop-types';
 import { useState, useEffect } from 'react';
 import {
   getEventParticipantsDetails,
-  submitOgiriAnswer,
-  toggleAnswerLike,
   getUserAnswerCount,
   getBestAnswer,
   checkEventExpirationAndSetBestAnswer,
