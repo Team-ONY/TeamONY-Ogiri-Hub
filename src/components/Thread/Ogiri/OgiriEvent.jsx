@@ -61,7 +61,6 @@ const OgiriEvent = ({ event, creator, onJoinEvent, currentUser, thread }) => {
   const [participantsDetails, setParticipantsDetails] = useState({});
   const [isLoading, setIsLoading] = useState(false);
   const [answer, setAnswer] = useState('');
-  const [answers, setAnswers] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { isOpen: isAnswersOpen } = useDisclosure();
   const [isExpired, setIsExpired] = useState(false);
@@ -133,7 +132,7 @@ const OgiriEvent = ({ event, creator, onJoinEvent, currentUser, thread }) => {
             createdAt: data.createdAt?.toDate() || new Date(),
           };
         });
-        setAnswers(newAnswers);
+        setLiveAnswers(newAnswers);
       },
       (error) => {
         console.error('Error listening to answers:', error);
@@ -186,7 +185,7 @@ const OgiriEvent = ({ event, creator, onJoinEvent, currentUser, thread }) => {
     };
 
     fetchUserAnswerCount();
-  }, [currentUser, isParticipating]);
+  }, [currentUser, isParticipating, event.id, event.threadId]);
 
   useEffect(() => {
     const updateRemainingTime = () => {
@@ -284,7 +283,7 @@ const OgiriEvent = ({ event, creator, onJoinEvent, currentUser, thread }) => {
     });
 
     return () => unsubscribe();
-  }, [event?.id]);
+  }, [event?.id, event.threadId]);
 
   const handleVote = async (answerId) => {
     if (!currentUser) {
