@@ -14,6 +14,7 @@ import {
   orderBy,
   onSnapshot,
   deleteDoc,
+  increment,
 } from 'firebase/firestore';
 
 //
@@ -442,6 +443,130 @@ export const cleanupOldEvents = async (threadId) => {
     }
   } catch (error) {
     console.error('Error cleaning up old events:', error);
+    throw error;
+  }
+};
+
+// リアルタイムで回答を監視する関数を追加
+export const subscribeToLiveAnswers = (threadId, eventId, callback) => {
+  try {
+    const answersRef = collection(
+      db,
+      'threads',
+      threadId,
+      'ogiriEvents',
+      eventId,
+      'answers'
+    );
+    const q = query(answersRef, orderBy('createdAt', 'desc'));
+
+    return onSnapshot(q, (snapshot) => {
+      const answers = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+        createdAt: doc.data().createdAt?.toDate() || new Date(),
+      }));
+      callback(answers);
+    });
+  } catch (error) {
+    console.error('Error subscribing to live answers:', error);
+    throw error;
+  }
+};
+
+// 投票機能を追加
+export const voteForAnswer = async (threadId, eventId, answerId, userId) => {
+  try {
+    const answerRef = doc(
+      db,
+      'threads',
+      threadId,
+      'ogiriEvents',
+      eventId,
+      'answers',
+      answerId
+    );
+    const answerDoc = await getDoc(answerRef);
+
+    if (!answerDoc.exists()) {
+      throw new Error('回答が見つかりません');
+    }
+
+    const currentVotes = answerDoc.data().votes || [];
+    const hasVoted = currentVotes.includes(userId);
+
+    await updateDoc(answerRef, {
+      votes: hasVoted ? arrayRemove(userId) : arrayUnion(userId),
+      voteCount: hasVoted ? increment(-1) : increment(1),
+    });
+
+    return !hasVoted;
+  } catch (error) {
+    console.error('Error voting for answer:', error);
+    throw error;
+  }
+};
+
+// イベントのリアルタイム更新を監視
+export const subscribeToEventUpdates = (threadId, eventId, callback) => {
+  try {
+    const eventRef = doc(db, 'threads', threadId, 'ogiriEvents', eventId);
+    return onSnapshot(eventRef, (doc) => {
+      if (doc.exists()) {
+        callback({
+          id: doc.id,
+          ...doc.data(),
+          createdAt: doc.data().createdAt?.toDate() || new Date(),
+        });
+      }
+    });
+  } catch (error) {
+    console.error('Error subscribing to event updates:', error);
+    throw error;
+  }
+};
+
+// 最も投票数の多い回答を取得
+export const getMostVotedAnswer = async (threadId, eventId) => {
+  try {
+    const answersRef = collection(
+      db,
+      'threads',
+      threadId,
+      'ogiriEvents',
+      eventId,
+      'answers'
+    );
+    const snapshot = await getDocs(answersRef);
+
+    let mostVotedAnswer = null;
+    let maxVotes = -1;
+
+    snapshot.docs.forEach((doc) => {
+      const answer = doc.data();
+      const voteCount = answer.voteCount || 0;
+      if (voteCount > maxVotes) {
+        maxVotes = voteCount;
+        mostVotedAnswer = { id: doc.id, ...answer };
+      }
+    });
+
+    if (mostVotedAnswer) {
+      // ユーザー情報を取得
+      const userRef = doc(db, 'users', mostVotedAnswer.userId);
+      const userDoc = await getDoc(userRef);
+      const userData = userDoc.data();
+
+      return {
+        ...mostVotedAnswer,
+        username: userData?.username || '名無しさん',
+        photoURL: userData?.photoURL || null,
+      };
+    }
+
+    return null;
+  } catch (error) {
+    console.error('Error getting most voted answer:', error);
     throw error;
   }
 };

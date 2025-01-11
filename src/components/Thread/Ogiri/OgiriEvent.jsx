@@ -12,8 +12,9 @@ import {
   AvatarGroup,
   Textarea,
   useDisclosure,
-  Collapse,
   IconButton,
+  Heading,
+  useToast,
 } from '@chakra-ui/react';
 import { motion } from 'framer-motion';
 import {
@@ -21,25 +22,37 @@ import {
   FiClock,
   FiArrowRight,
   FiCheck,
-  FiChevronUp,
-  FiChevronDown,
   FiX,
+  FiHeart,
+  FiAward,
+  FiStar,
+  FiChevronLeft,
+  FiChevronRight,
 } from 'react-icons/fi';
 import PropTypes from 'prop-types';
 import { useState, useEffect } from 'react';
 import {
   getEventParticipantsDetails,
-  submitOgiriAnswer,
-  toggleAnswerLike,
   getUserAnswerCount,
   getBestAnswer,
   checkEventExpirationAndSetBestAnswer,
   calculateRemainingTime,
   deleteOgiriEvent,
+  subscribeToLiveAnswers,
+  voteForAnswer,
+  getMostVotedAnswer,
+  checkEventExpiration,
 } from '../../../services/ogiriService';
-import OgiriAnswers from './OgiriAnswers';
 import { useAlert } from '../../../hooks/useAlert';
-import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
+import {
+  collection,
+  query,
+  orderBy,
+  onSnapshot,
+  doc,
+  addDoc,
+  getDoc,
+} from 'firebase/firestore';
 import { db } from '../../../config/firebase';
 import DeleteOgiriEventModal from './DeleteOgiriModal';
 
@@ -48,9 +61,8 @@ const OgiriEvent = ({ event, creator, onJoinEvent, currentUser, thread }) => {
   const [participantsDetails, setParticipantsDetails] = useState({});
   const [isLoading, setIsLoading] = useState(false);
   const [answer, setAnswer] = useState('');
-  const [answers, setAnswers] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { isOpen: isAnswersOpen, onToggle: toggleAnswers } = useDisclosure();
+  const { isOpen: isAnswersOpen } = useDisclosure();
   const [isExpired, setIsExpired] = useState(false);
   const [userAnswerCount, setUserAnswerCount] = useState(0);
   const [bestAnswerId, setBestAnswerId] = useState(null);
@@ -59,6 +71,13 @@ const OgiriEvent = ({ event, creator, onJoinEvent, currentUser, thread }) => {
   const isAdmin = currentUser?.uid === thread?.createdBy;
   const { isOpen, onOpen, onClose } = useDisclosure();
   const isMac = /Mac|iPod|iPhone|iPad/.test(navigator.platform);
+  const [liveAnswers, setLiveAnswers] = useState([]);
+  const [mostVotedAnswer, setMostVotedAnswer] = useState(null);
+  const toast = useToast();
+  const [currentPage, setCurrentPage] = useState(1);
+  const answersPerPage = 5;
+  const [isEventExpired, setIsEventExpired] = useState(false);
+  const [usersDetails, setUsersDetails] = useState({});
 
   console.log({
     currentUserId: currentUser?.uid,
@@ -67,8 +86,11 @@ const OgiriEvent = ({ event, creator, onJoinEvent, currentUser, thread }) => {
   });
 
   useEffect(() => {
-    setIsParticipating(event.participants?.includes(currentUser?.uid) || false);
-  }, [event.participants, currentUser]);
+    if (!event?.participants || !currentUser) return;
+
+    const isUserParticipating = event.participants.includes(currentUser.uid);
+    setIsParticipating(isUserParticipating);
+  }, [event?.participants, currentUser]);
 
   useEffect(() => {
     const fetchParticipantsDetails = async () => {
@@ -101,12 +123,16 @@ const OgiriEvent = ({ event, creator, onJoinEvent, currentUser, thread }) => {
     const unsubscribe = onSnapshot(
       q,
       (snapshot) => {
-        const newAnswers = snapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-          createdAt: doc.data().createdAt?.toDate() || new Date(),
-        }));
-        setAnswers(newAnswers);
+        const newAnswers = snapshot.docs.map((doc) => {
+          const data = doc.data();
+          console.log('Answer data:', data);
+          return {
+            id: doc.id,
+            ...data,
+            createdAt: data.createdAt?.toDate() || new Date(),
+          };
+        });
+        setLiveAnswers(newAnswers);
       },
       (error) => {
         console.error('Error listening to answers:', error);
@@ -159,7 +185,7 @@ const OgiriEvent = ({ event, creator, onJoinEvent, currentUser, thread }) => {
     };
 
     fetchUserAnswerCount();
-  }, [currentUser, isParticipating]);
+  }, [currentUser, isParticipating, event.id, event.threadId]);
 
   useEffect(() => {
     const updateRemainingTime = () => {
@@ -180,6 +206,442 @@ const OgiriEvent = ({ event, creator, onJoinEvent, currentUser, thread }) => {
     return () => clearInterval(interval);
   }, [event]);
 
+  useEffect(() => {
+    if (!event.id || !isParticipating) return;
+
+    const unsubscribe = subscribeToLiveAnswers(
+      event.threadId,
+      event.id,
+      (newAnswers) => {
+        setLiveAnswers(newAnswers);
+      }
+    );
+
+    return () => unsubscribe();
+  }, [event.id, event.threadId, isParticipating]);
+
+  useEffect(() => {
+    const checkEventAndGetMostVoted = async () => {
+      if (!event.id) return;
+
+      const isExpired = checkEventExpiration({
+        createdAt: event.createdAt,
+        duration: event.duration,
+        status: event.status,
+      });
+
+      if (isExpired) {
+        const votedAnswer = await getMostVotedAnswer(event.threadId, event.id);
+        setMostVotedAnswer(votedAnswer);
+      }
+    };
+
+    checkEventAndGetMostVoted();
+  }, [event]);
+
+  // 回答を新着順にソートする関数
+  const sortAnswersByDate = (answers) => {
+    return [...answers].sort((a, b) => {
+      const dateA =
+        a.createdAt instanceof Date ? a.createdAt : a.createdAt.toDate();
+      const dateB =
+        b.createdAt instanceof Date ? b.createdAt : b.createdAt.toDate();
+      return dateB - dateA; // 降順（新着順）
+    });
+  };
+
+  // 重複を防ぎつつ回答を更新する関数
+  const updateLiveAnswers = (newAnswer) => {
+    setLiveAnswers((prev) => {
+      // 既存の回答から重複を除外し、新しい回答を追加して新着順にソート
+      const uniqueAnswers = prev.filter((answer) => answer.id !== newAnswer.id);
+      return sortAnswersByDate([...uniqueAnswers, newAnswer]);
+    });
+  };
+
+  // リアルタイムリスナーの設定
+  useEffect(() => {
+    if (!event?.id) return;
+
+    const answersRef = collection(
+      db,
+      'threads',
+      event.threadId,
+      'ogiriEvents',
+      event.id,
+      'answers'
+    );
+
+    const unsubscribe = onSnapshot(answersRef, (snapshot) => {
+      const answers = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+
+      // 新着順にソートして状態を更新
+      setLiveAnswers(sortAnswersByDate(answers));
+    });
+
+    return () => unsubscribe();
+  }, [event?.id, event.threadId]);
+
+  const handleVote = async (answerId) => {
+    if (!currentUser) {
+      showAlert('投票するにはログインが必要です', 'warning');
+      return;
+    }
+
+    try {
+      await voteForAnswer(event.threadId, event.id, answerId, currentUser.uid);
+      toast({
+        title: '投票しました',
+        status: 'success',
+        duration: 2000,
+        isClosable: true,
+      });
+    } catch (error) {
+      console.error('Error voting:', error);
+      showAlert('投票に失敗しました', 'error');
+    }
+  };
+
+  // 固定のグラデーション
+  const gradient = 'linear(to-r, pink.400, purple.400)';
+
+  // シンプルにメールアドレスから@より前の部分を取得
+  const getUserId = (userId) => {
+    const userEmail = usersDetails[userId]?.email;
+    return userEmail ? userEmail.split('@')[0] : 'unknown';
+  };
+
+  // イベントの終了状態を監視
+  useEffect(() => {
+    const checkExpiration = () => {
+      const isExpired = checkEventExpiration({
+        createdAt: event.createdAt,
+        duration: event.duration,
+        status: event.status,
+      });
+
+      if (isExpired && !isEventExpired) {
+        setIsEventExpired(true);
+        // イベント終了時に最多投票回答を取得
+        getMostVotedAnswer(event.threadId, event.id)
+          .then((votedAnswer) => {
+            setMostVotedAnswer(votedAnswer);
+          })
+          .catch((error) => {
+            console.error('Error fetching most voted answer:', error);
+          });
+      }
+    };
+
+    // 初回チェック
+    checkExpiration();
+
+    // 1秒ごとにチェック
+    const interval = setInterval(checkExpiration, 1000);
+    return () => clearInterval(interval);
+  }, [event, isEventExpired]);
+
+  // ユーザー情報を取得
+  useEffect(() => {
+    const fetchUsersDetails = async () => {
+      try {
+        // 回答に含まれるすべてのユーザーIDを収集
+        const userIds = [
+          ...new Set(
+            [
+              ...liveAnswers.map((answer) => answer.userId),
+              mostVotedAnswer?.userId,
+            ].filter(Boolean)
+          ),
+        ];
+
+        const details = {};
+        await Promise.all(
+          userIds.map(async (userId) => {
+            const userRef = doc(db, 'users', userId);
+            const userSnap = await getDoc(userRef);
+            if (userSnap.exists()) {
+              details[userId] = userSnap.data();
+            }
+          })
+        );
+
+        setUsersDetails(details);
+      } catch (error) {
+        console.error('Error fetching users details:', error);
+      }
+    };
+
+    if (liveAnswers.length > 0 || mostVotedAnswer) {
+      fetchUsersDetails();
+    }
+  }, [liveAnswers, mostVotedAnswer]);
+
+  const renderLiveAnswers = () => {
+    const isTimeExpired = checkEventExpiration({
+      createdAt: event.createdAt,
+      duration: event.duration,
+      status: event.status,
+    });
+
+    // 有効な回答のみをフィルタリング（最多投票回答を除外）
+    const validAnswers = liveAnswers
+      .filter((answer) => answer && answer.id)
+      .filter((answer) => {
+        // 最多投票回答を除外
+        if (isTimeExpired && mostVotedAnswer) {
+          return answer.id !== mostVotedAnswer.id;
+        }
+        return true;
+      });
+
+    // ページネーション用の計算
+    const totalPages = Math.ceil(validAnswers.length / answersPerPage);
+    const startIndex = (currentPage - 1) * answersPerPage;
+    const endIndex = startIndex + answersPerPage;
+    const currentAnswers = validAnswers.slice(startIndex, endIndex);
+
+    return (
+      <VStack spacing={4} width="100%">
+        {currentAnswers.map((answer, index) => (
+          <motion.div
+            key={answer.id}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, delay: index * 0.1 }}
+            style={{ width: '100%' }}
+          >
+            <Box
+              bg="rgba(255, 255, 255, 0.05)"
+              backdropFilter="blur(10px)"
+              borderRadius="2xl"
+              overflow="hidden"
+              position="relative"
+              border="1px solid"
+              borderColor="whiteAlpha.100"
+              _hover={{
+                transform: 'translateY(-2px)',
+                transition: 'all 0.2s',
+                boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)',
+              }}
+            >
+              <Box
+                position="absolute"
+                top={0}
+                left={0}
+                right={0}
+                height="2px"
+                bgGradient={gradient}
+              />
+
+              <Box p={6}>
+                <VStack align="stretch" spacing={4}>
+                  <Text
+                    color="white"
+                    fontSize="lg"
+                    fontWeight="medium"
+                    lineHeight="tall"
+                  >
+                    {answer.content}
+                  </Text>
+
+                  <Flex justify="space-between" align="center">
+                    {/* 左側：ユーザー情報 */}
+                    <HStack spacing={3}>
+                      {isTimeExpired ? (
+                        <>
+                          <Avatar
+                            size="sm"
+                            src={answer.photoURL}
+                            name={answer.username}
+                          />
+                          <VStack align="start" spacing={0}>
+                            <Text
+                              bgGradient={gradient}
+                              bgClip="text"
+                              fontWeight="bold"
+                            >
+                              {answer.username}
+                            </Text>
+                            <Text color="whiteAlpha.600" fontSize="sm">
+                              @{getUserId(answer.userId)}
+                            </Text>
+                          </VStack>
+                        </>
+                      ) : (
+                        <HStack
+                          spacing={2}
+                          bg="whiteAlpha.100"
+                          borderRadius="full"
+                          px={3}
+                          py={1}
+                        >
+                          <Icon as={FiStar} color="yellow.300" w={4} h={4} />
+                          <Text
+                            fontSize="sm"
+                            bgGradient={gradient}
+                            bgClip="text"
+                            fontWeight="bold"
+                          >
+                            回答者 #{index + 1}
+                          </Text>
+                        </HStack>
+                      )}
+                    </HStack>
+
+                    {/* 右側：投票ボタンとカウント */}
+                    <HStack spacing={2}>
+                      <IconButton
+                        icon={
+                          <Icon
+                            as={FiHeart}
+                            color={
+                              answer.votes?.includes(currentUser?.uid)
+                                ? 'pink.400'
+                                : 'white'
+                            }
+                          />
+                        }
+                        variant="ghost"
+                        size="sm"
+                        isDisabled={!currentUser || isTimeExpired}
+                        onClick={() => handleVote(answer.id)}
+                        _hover={{
+                          bg: 'whiteAlpha.100',
+                          transform: 'scale(1.1)',
+                        }}
+                        transition="all 0.2s"
+                        aria-label="Vote"
+                      />
+                      <Badge
+                        colorScheme="pink"
+                        variant="subtle"
+                        px={2}
+                        borderRadius="full"
+                      >
+                        {answer.voteCount || 0}
+                      </Badge>
+                    </HStack>
+                  </Flex>
+                </VStack>
+              </Box>
+            </Box>
+          </motion.div>
+        ))}
+
+        {/* ページネーション */}
+        {totalPages > 1 && (
+          <Box
+            pt={6}
+            pb={2}
+            width="100%"
+            display="flex"
+            justifyContent="center"
+            alignItems="center"
+          >
+            <HStack
+              spacing={2}
+              bg="rgba(0, 0, 0, 0.3)"
+              backdropFilter="blur(10px)"
+              borderRadius="full"
+              px={4}
+              py={2}
+              border="1px solid"
+              borderColor="whiteAlpha.200"
+            >
+              <IconButton
+                icon={<FiChevronLeft />}
+                onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                isDisabled={currentPage === 1}
+                variant="ghost"
+                size="sm"
+                color="white"
+                _hover={{
+                  bg: 'whiteAlpha.100',
+                  transform: 'translateX(-2px)',
+                }}
+                _active={{ bg: 'whiteAlpha.200' }}
+                aria-label="Previous page"
+                transition="all 0.2s"
+              />
+
+              {[...Array(totalPages)].map((_, i) => {
+                const pageNum = i + 1;
+                const isCurrentPage = currentPage === pageNum;
+
+                return (
+                  <Button
+                    key={i}
+                    onClick={() => setCurrentPage(pageNum)}
+                    size="sm"
+                    variant="unstyled"
+                    minW={8}
+                    h={8}
+                    display="flex"
+                    alignItems="center"
+                    justifyContent="center"
+                    position="relative"
+                    transition="all 0.2s"
+                    _hover={{
+                      transform: 'translateY(-2px)',
+                    }}
+                  >
+                    {isCurrentPage && (
+                      <Box
+                        position="absolute"
+                        top={0}
+                        left={0}
+                        right={0}
+                        bottom={0}
+                        bgGradient={gradient}
+                        borderRadius="full"
+                        opacity={0.3}
+                      />
+                    )}
+                    <Text
+                      color={isCurrentPage ? 'white' : 'whiteAlpha.700'}
+                      fontWeight={isCurrentPage ? 'bold' : 'normal'}
+                      bgGradient={isCurrentPage ? gradient : undefined}
+                      bgClip={isCurrentPage ? 'text' : undefined}
+                    >
+                      {pageNum}
+                    </Text>
+                  </Button>
+                );
+              })}
+
+              <IconButton
+                icon={<FiChevronRight />}
+                onClick={() =>
+                  setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+                }
+                isDisabled={currentPage === totalPages}
+                variant="ghost"
+                size="sm"
+                color="white"
+                _hover={{
+                  bg: 'whiteAlpha.100',
+                  transform: 'translateX(2px)',
+                }}
+                _active={{ bg: 'whiteAlpha.200' }}
+                aria-label="Next page"
+                transition="all 0.2s"
+              />
+            </HStack>
+          </Box>
+        )}
+      </VStack>
+    );
+  };
+
+  // 新しい回答が追加された時に最初のページに戻る
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [liveAnswers.length]);
+
   if (!event || !event.createdAt) {
     return null;
   }
@@ -196,55 +658,78 @@ const OgiriEvent = ({ event, creator, onJoinEvent, currentUser, thread }) => {
   };
 
   const handleSubmitAnswer = async () => {
-    if (!answer.trim() || !currentUser) return;
+    if (!answer.trim() || isSubmitting || userAnswerCount >= event.maxResponses)
+      return;
+    if (!currentUser) return;
 
     setIsSubmitting(true);
     try {
-      await submitOgiriAnswer(
+      const userDisplayName = currentUser.displayName || '匿名ユーザー';
+      const userPhotoURL = currentUser.photoURL || null;
+      const userId = currentUser.uid;
+
+      if (!userId) {
+        throw new Error('User ID is required');
+      }
+
+      const answersRef = collection(
+        db,
+        'threads',
         event.threadId,
+        'ogiriEvents',
         event.id,
-        currentUser.uid,
-        answer.trim(),
-        event.maxResponses
+        'answers'
       );
+
+      const answerData = {
+        content: answer.trim(),
+        userId: userId,
+        username: userDisplayName,
+        photoURL: userPhotoURL,
+        createdAt: new Date(),
+        voteCount: 0,
+        votes: [],
+      };
+
+      const validatedData = Object.entries(answerData).reduce(
+        (acc, [key, value]) => {
+          if (value !== undefined) {
+            acc[key] = value;
+          }
+          return acc;
+        },
+        {}
+      );
+
+      const newAnswerRef = await addDoc(answersRef, validatedData);
+      const newAnswer = {
+        id: newAnswerRef.id,
+        ...validatedData,
+      };
+
+      // 重複を防いで新着順に更新
+      updateLiveAnswers(newAnswer);
 
       setAnswer('');
       setUserAnswerCount((prev) => prev + 1);
+
+      toast({
+        title: '回答を投稿しました',
+        status: 'success',
+        duration: 3000,
+        isClosable: true,
+      });
     } catch (error) {
       console.error('Error submitting answer:', error);
-      showAlert(error.message || '回答の投稿に失敗しました', 'error');
+      toast({
+        title: '回答の投稿に失敗しました',
+        description: error.message,
+        status: 'error',
+        duration: 5000,
+        isClosable: true,
+      });
     } finally {
       setIsSubmitting(false);
-    }
-  };
-
-  const handleLike = async (answerId) => {
-    if (!currentUser) return;
-
-    try {
-      await toggleAnswerLike(
-        event.threadId,
-        event.id,
-        answerId,
-        currentUser.uid
-      );
-      // 回答リストを更新
-      const updatedAnswers = answers.map((ans) => {
-        if (ans.id === answerId) {
-          const isLiked = ans.likedBy?.includes(currentUser.uid);
-          return {
-            ...ans,
-            likes: isLiked ? ans.likes - 1 : ans.likes + 1,
-            likedBy: isLiked
-              ? ans.likedBy.filter((id) => id !== currentUser.uid)
-              : [...(ans.likedBy || []), currentUser.uid],
-          };
-        }
-        return ans;
-      });
-      setAnswers(updatedAnswers);
-    } catch (error) {
-      console.error('Error toggling like:', error);
     }
   };
 
@@ -601,48 +1086,145 @@ const OgiriEvent = ({ event, creator, onJoinEvent, currentUser, thread }) => {
               </Box>
             )}
 
-            <Box mt={4}>
-              {isExpired ? (
-                <>
-                  <Button
-                    onClick={toggleAnswers}
-                    variant="ghost"
-                    color="whiteAlpha.800"
-                    width="100%"
-                    rightIcon={
-                      <Icon as={isAnswersOpen ? FiChevronUp : FiChevronDown} />
-                    }
-                  >
-                    回答を{isAnswersOpen ? '閉じる' : '見る'}
-                  </Button>
-                  <Collapse in={isAnswersOpen}>
-                    <VStack spacing={4} mt={4}>
-                      <OgiriAnswers
-                        answers={answers}
-                        currentUser={currentUser}
-                        onLike={handleLike}
-                        bestAnswerId={bestAnswerId}
-                        isExpired={isExpired}
-                      />
-                    </VStack>
-                  </Collapse>
-                </>
-              ) : (
-                <Box
-                  p={4}
-                  bg="whiteAlpha.100"
-                  borderRadius="xl"
-                  textAlign="center"
-                >
-                  <HStack spacing={2} justify="center">
-                    <Icon as={FiClock} color="pink.300" />
-                    <Text color="whiteAlpha.800">
-                      回答は制限時間終了後に公開されます
+            {isParticipating && (
+              <Box mt={4}>
+                <Heading size="md" color="white" mb={4}>
+                  回答一覧
+                </Heading>
+
+                {checkEventExpiration({
+                  createdAt: event.createdAt,
+                  duration: event.duration,
+                  status: event.status,
+                }) ? (
+                  <>
+                    {isEventExpired &&
+                      mostVotedAnswer &&
+                      mostVotedAnswer.id === bestAnswerId && (
+                        <motion.div
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ duration: 0.4 }}
+                          style={{ width: '100%' }}
+                        >
+                          <Box
+                            bg="rgba(0, 0, 0, 0.3)"
+                            backdropFilter="blur(16px)"
+                            borderRadius="2xl"
+                            overflow="hidden"
+                            position="relative"
+                            border="1px solid"
+                            borderColor="pink.500"
+                            boxShadow="0 4px 30px rgba(236, 72, 153, 0.1)"
+                            mb={6}
+                          >
+                            <Box
+                              position="absolute"
+                              top={0}
+                              left={0}
+                              right={0}
+                              height="3px"
+                              bgGradient={gradient}
+                            />
+                            <Box p={6}>
+                              <VStack spacing={4} align="stretch">
+                                <HStack spacing={3} justify="space-between">
+                                  <HStack>
+                                    <Icon
+                                      as={FiAward}
+                                      color="pink.300"
+                                      w={5}
+                                      h={5}
+                                    />
+                                    <Text
+                                      bgGradient={gradient}
+                                      bgClip="text"
+                                      fontSize="lg"
+                                      fontWeight="bold"
+                                    >
+                                      最多投票回答 🏆
+                                    </Text>
+                                  </HStack>
+                                  <Badge
+                                    colorScheme="pink"
+                                    variant="solid"
+                                    px={3}
+                                    py={1}
+                                    borderRadius="full"
+                                  >
+                                    {mostVotedAnswer.voteCount || 0} 票
+                                  </Badge>
+                                </HStack>
+
+                                <Box
+                                  bg="whiteAlpha.100"
+                                  p={4}
+                                  borderRadius="xl"
+                                  border="1px solid"
+                                  borderColor="whiteAlpha.200"
+                                >
+                                  <Text
+                                    color="white"
+                                    fontSize="xl"
+                                    fontWeight="medium"
+                                    lineHeight="tall"
+                                  >
+                                    {mostVotedAnswer.content}
+                                  </Text>
+                                </Box>
+
+                                <HStack spacing={3}>
+                                  <Avatar
+                                    size="md"
+                                    src={mostVotedAnswer.photoURL}
+                                    name={mostVotedAnswer.username}
+                                    border="2px solid"
+                                    borderColor="pink.400"
+                                  />
+                                  <VStack align="start" spacing={0}>
+                                    <Text
+                                      bgGradient={gradient}
+                                      bgClip="text"
+                                      fontWeight="bold"
+                                    >
+                                      {mostVotedAnswer.username}
+                                    </Text>
+                                    <Text color="whiteAlpha.600" fontSize="sm">
+                                      @{getUserId(mostVotedAnswer.userId)}
+                                    </Text>
+                                  </VStack>
+                                </HStack>
+                              </VStack>
+                            </Box>
+                          </Box>
+                        </motion.div>
+                      )}
+                    {renderLiveAnswers()}
+                  </>
+                ) : isParticipating ? (
+                  <VStack spacing={4} width="100%">
+                    <Text color="pink.300" fontSize="sm" fontWeight="medium">
+                      制限時間内の投票をお願いします！
                     </Text>
-                  </HStack>
-                </Box>
-              )}
-            </Box>
+                    {renderLiveAnswers()}
+                  </VStack>
+                ) : (
+                  <Box
+                    p={4}
+                    bg="whiteAlpha.100"
+                    borderRadius="xl"
+                    textAlign="center"
+                  >
+                    <HStack spacing={2} justify="center">
+                      <Icon as={FiClock} color="pink.300" />
+                      <Text color="whiteAlpha.800">
+                        参加して回答を見る・投票する
+                      </Text>
+                    </HStack>
+                  </Box>
+                )}
+              </Box>
+            )}
           </Flex>
         </Box>
       </Box>
