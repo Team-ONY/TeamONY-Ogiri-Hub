@@ -43,7 +43,6 @@ import {
   getMostVotedAnswer,
   checkEventExpiration,
 } from '../../../services/ogiriService';
-import OgiriAnswers from './OgiriAnswers';
 import { useAlert } from '../../../hooks/useAlert';
 import {
   collection,
