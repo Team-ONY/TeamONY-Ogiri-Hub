@@ -12,7 +12,6 @@ import {
   AvatarGroup,
   Textarea,
   useDisclosure,
-  Collapse,
   IconButton,
   Heading,
   useToast,
