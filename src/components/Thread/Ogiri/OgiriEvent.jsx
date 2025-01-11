@@ -63,7 +63,7 @@ const OgiriEvent = ({ event, creator, onJoinEvent, currentUser, thread }) => {
   const [answer, setAnswer] = useState('');
   const [answers, setAnswers] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { isOpen: isAnswersOpen, onToggle: toggleAnswers } = useDisclosure();
+  const { isOpen: isAnswersOpen } = useDisclosure();
   const [isExpired, setIsExpired] = useState(false);
   const [userAnswerCount, setUserAnswerCount] = useState(0);
   const [bestAnswerId, setBestAnswerId] = useState(null);
