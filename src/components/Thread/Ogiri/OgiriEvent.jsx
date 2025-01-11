@@ -50,10 +50,6 @@ import {
   orderBy,
   onSnapshot,
   doc,
-  updateDoc,
-  increment,
-  arrayRemove,
-  arrayUnion,
   addDoc,
   getDoc,
 } from 'firebase/firestore';
