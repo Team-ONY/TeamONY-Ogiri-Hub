@@ -1,16 +1,16 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import { VStack, Box, Flex, Spinner, Text, Center } from '@chakra-ui/react';
+import { VStack, Box, Flex, Spinner, Text, Button } from '@chakra-ui/react';
 import { auth } from '../../config/firebase';
 import { useThreadData } from './hooks/useThreadData';
 import { useComments } from './hooks/useComments';
 import { ThreadHeader } from './ThreadHeader';
-import { CommentSection } from './CommentSection';
 import { ParticipantsList } from './ParticipantsList';
 import { useAlert } from '../../hooks/useAlert';
 import CreateOgiriButton from './Ogiri/CreateOgiriButton';
 import CreateOgiriEventModal from './Ogiri/CreateOgiriEventModal';
 import OgiriEvent from './Ogiri/OgiriEvent';
+import { CommentItem } from './Comments/CommentItem';
 import {
   createOgiriEvent,
   joinOgiriEvent,
@@ -31,12 +31,12 @@ function ThreadDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
-  const commentsEndRef = useRef(null);
   const { showAlert } = useAlert();
   const currentUser = auth.currentUser;
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [ogiriEvents, setOgiriEvents] = useState([]);
   const [loadingEvents, setLoadingEvents] = useState(true);
+  const [combinedContent, setCombinedContent] = useState([]);
 
   // ViewType の設定
   const currentViewType = location.pathname.includes('/admin/')
@@ -301,6 +301,26 @@ function ThreadDetail() {
     return () => unsubscribe();
   }, [id, showAlert]);
 
+  // 大喜利イベントとコメントを統合するuseEffect
+  useEffect(() => {
+    if (!thread?.comments || !ogiriEvents) return;
+
+    const combined = [
+      ...thread.comments.map((comment) => ({
+        ...comment,
+        type: 'comment',
+        timestamp: comment.createdAt.toDate().getTime(),
+      })),
+      ...ogiriEvents.map((event) => ({
+        ...event,
+        type: 'ogiriEvent',
+        timestamp: event.createdAt.getTime(),
+      })),
+    ].sort((a, b) => b.timestamp - a.timestamp);
+
+    setCombinedContent(combined);
+  }, [thread?.comments, ogiriEvents]);
+
   if (loadingThread) {
     return (
       <Flex justify="center" align="center" height="100vh">
@@ -329,47 +349,57 @@ function ThreadDetail() {
       pb={20}
       position="relative"
     >
-      {/* メインコンテンツ */}
       <Box flex="1">
         <VStack spacing={6} align="stretch">
           <ThreadHeader
-            thread={{
-              ...thread,
-              comments: thread?.comments || [],
-            }}
+            thread={thread}
             threadCreator={threadCreator}
             currentUser={currentUser}
             onAdminClick={handleGoToAdminPage}
             onSubmit={handleAddComment}
             error={error}
           />
+
+          {/* ローディング状態の表示 */}
           {loadingEvents ? (
-            <Center p={8}>
+            <Flex justify="center" py={8}>
               <Spinner size="xl" color="pink.400" />
-            </Center>
+            </Flex>
           ) : (
-            ogiriEvents.map((event) =>
-              event && event.creator ? (
+            combinedContent.map((item) =>
+              item.type === 'ogiriEvent' ? (
                 <OgiriEvent
-                  key={`${event.id}-${event.createdAt.getTime()}`}
-                  event={{ ...event, threadId: id }}
-                  creator={event.creator}
-                  onJoinEvent={() => handleJoinEvent(event.id)}
+                  key={`event-${item.id}`}
+                  event={{ ...item, threadId: id }}
+                  creator={item.creator}
+                  onJoinEvent={() => handleJoinEvent(item.id)}
                   currentUser={currentUser}
                   thread={thread}
                 />
-              ) : null
+              ) : (
+                <CommentItem
+                  key={`comment-${item.uniqueKey || item.id}`}
+                  comment={item}
+                  isAdmin={item.isAdmin}
+                  onDelete={handleDeleteComment}
+                  user={currentUser}
+                  thread={thread}
+                />
+              )
             )
           )}
-          <CommentSection
-            comments={displayedComments}
-            isLoading={isLoadingComments}
-            hasMore={hasMoreComments}
-            onDelete={handleDeleteComment}
-            user={currentUser}
-            thread={thread}
-            onLoadMore={loadMoreComments}
-          />
+
+          {/* 無限スクロール用のボタン */}
+          {hasMoreComments && (
+            <Button
+              onClick={loadMoreComments}
+              isLoading={isLoadingComments}
+              // ... 既存のスタイル
+            >
+              もっと見る
+            </Button>
+          )}
+
           <CreateOgiriButton onOpen={() => setIsModalOpen(true)} />
           <CreateOgiriEventModal
             isOpen={isModalOpen}
@@ -381,7 +411,6 @@ function ThreadDetail() {
               }
             }}
           />
-          <Box ref={commentsEndRef} />
         </VStack>
       </Box>
 
