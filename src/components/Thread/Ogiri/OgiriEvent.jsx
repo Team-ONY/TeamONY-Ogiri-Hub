@@ -42,6 +42,7 @@ import {
   voteForAnswer,
   getMostVotedAnswer,
   checkEventExpiration,
+  setBestAnswer,
 } from '../../../services/ogiriService';
 import { useAlert } from '../../../hooks/useAlert';
 import {
@@ -221,23 +222,38 @@ const OgiriEvent = ({ event, creator, onJoinEvent, currentUser, thread }) => {
   }, [event.id, event.threadId, isParticipating]);
 
   useEffect(() => {
-    const checkEventAndGetMostVoted = async () => {
-      if (!event.id) return;
-
+    const checkExpiration = async () => {
       const isExpired = checkEventExpiration({
         createdAt: event.createdAt,
         duration: event.duration,
         status: event.status,
       });
 
-      if (isExpired) {
-        const votedAnswer = await getMostVotedAnswer(event.threadId, event.id);
-        setMostVotedAnswer(votedAnswer);
+      if (isExpired && !isEventExpired) {
+        setIsEventExpired(true);
+        try {
+          // 最多投票回答を取得
+          const votedAnswer = await getMostVotedAnswer(
+            event.threadId,
+            event.id
+          );
+          if (votedAnswer) {
+            setMostVotedAnswer(votedAnswer);
+            // ベストアンサーとして設定（既に設定されていない場合のみ）
+            if (!event.bestAnswerId) {
+              await setBestAnswer(event.threadId, event.id, votedAnswer.id);
+            }
+          }
+        } catch (error) {
+          console.error('Error handling event expiration:', error);
+        }
       }
     };
 
-    checkEventAndGetMostVoted();
-  }, [event]);
+    checkExpiration();
+    const interval = setInterval(checkExpiration, 1000);
+    return () => clearInterval(interval);
+  }, [event, isEventExpired]);
 
   // 回答を新着順にソートする関数
   const sortAnswersByDate = (answers) => {
@@ -1255,6 +1271,7 @@ OgiriEvent.propTypes = {
     status: PropTypes.string,
     maxResponses: PropTypes.number,
     createdBy: PropTypes.string.isRequired,
+    bestAnswerId: PropTypes.string,
   }).isRequired,
   creator: PropTypes.object.isRequired,
   onJoinEvent: PropTypes.func.isRequired,
