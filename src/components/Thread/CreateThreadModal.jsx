@@ -57,20 +57,24 @@ const inputStyles = {
 };
 
 const FormSection = ({ icon, label, children }) => (
-  <Box>
+  <Box
+    marginBottom={{ base: 8, md: 10 }}  // セクション間の余白を増加
+  >
     <FormLabel
       color="whiteAlpha.700"
       fontSize={{ base: 'sm', md: 'md' }}
       fontWeight="medium"
-      mb={3}
+      mb={4}  // ラベルとコンテンツの間隔を増加
       display="flex"
       alignItems="center"
-      gap={2}
+      gap={3}  // アイコンとラベルの間隔を増加
     >
-      <Icon as={icon} />
+      <Icon as={icon} boxSize={5} />  {/*アイコンサイズを調整*/}
       {label}
     </FormLabel>
-    {children}
+    <Box paddingX={2}>  {/*子要素に左右のパディングを追加*/}
+      {children}
+    </Box>
   </Box>
 );
 
@@ -171,7 +175,10 @@ const CreateThreadModal = ({ isOpen, onClose, onThreadCreated }) => {
         borderColor="whiteAlpha.200"
         borderRadius="2xl"
         boxShadow="0 8px 32px 0 rgba(236, 72, 153, 0.37), 0 8px 32px 0 rgba(128, 90, 213, 0.37)"
-        px={{ base: 4, md: 8 }}
+        px={{ base: 6, md: 10 }}  //左右のパディングを増加
+        py={{ base: 6, md: 8 }}  //上下のパディングを増加
+        maxW={{ base: "95%", md: "800px" }} //最大値を設定
+        mx="auto" //中央寄せ
       >
         <ModalHeader>
           <Heading
@@ -182,16 +189,21 @@ const CreateThreadModal = ({ isOpen, onClose, onThreadCreated }) => {
             letterSpacing="tight"
             display="flex"
             alignItems="center"
+            marginBottom={{ base: 4, md: 8 }}
             gap={3}
           >
             <Icon as={FiEdit3} />
             Create New Thread
           </Heading>
         </ModalHeader>
-        <ModalCloseButton color = 'whiteAlpha.700'/>
+        <ModalCloseButton 
+          color='whiteAlpha.700'                    
+          marginTop={{ base: 4, md: 8 }}
+          marginRight={{ base: 4, md: 4 }}
+          fontSize={25}/>
 
         <ModalBody>
-          <VStack spacing={{ base: 6, md: 8 }} align="stretch">
+          <VStack spacing={{ base: 6, md: 8 }} align="stretch"> 
             <FormSection icon={FiEdit3} label="Thread Title">
               <MotionInput
                 placeholder="素敵なタイトルを入力してください"
@@ -203,7 +215,7 @@ const CreateThreadModal = ({ isOpen, onClose, onThreadCreated }) => {
               <Text
                 color={
                   title.length > MAX_TITLE_LENGTH ? 'red.400' : 'whiteAlpha.700'
-                } // 追加
+                }
                 fontSize="sm"
                 mt={2}
                 textAlign="right"
@@ -244,11 +256,13 @@ const CreateThreadModal = ({ isOpen, onClose, onThreadCreated }) => {
 
             </FormSection>
 
-            <FormSection icon={FiPaperclip} label="Attachments">
+            <FormSection icon={FiPaperclip} marginTop={{ base: 4, md: 8 }} label="Attachments">
               <FileUploadBox setAttachments={setAttachments} />
             </FormSection>
 
-            <FormSection icon={FiMessageSquare} label="Thread Content">
+            <FormSection
+              icon={FiMessageSquare}              
+              label="Thread Content">
               <MotionTextarea
                 placeholder="スレッドの内容を入力してください"
                 value={content}
