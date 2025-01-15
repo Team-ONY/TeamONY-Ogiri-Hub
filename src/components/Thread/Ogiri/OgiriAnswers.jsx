@@ -153,9 +153,18 @@ const OgiriAnswers = ({ answers, currentUser, onLike, bestAnswerId }) => {
     }
   }, [answers]);
 
+  // 回答を日付の降順（新しい順）でソート
+  const sortedAnswers = [...answers].sort((a, b) => {
+    const dateA =
+      a.createdAt instanceof Date ? a.createdAt : a.createdAt.toDate();
+    const dateB =
+      b.createdAt instanceof Date ? b.createdAt : b.createdAt.toDate();
+    return dateB - dateA; // 降順（新しい順）
+  });
+
   return (
     <VStack spacing={6} w="full" align="stretch" mt={6} px={2}>
-      {answers.map((answer) => (
+      {sortedAnswers.map((answer) => (
         <OgiriAnswer
           key={answer.id}
           answer={answer}

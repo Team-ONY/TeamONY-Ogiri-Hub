@@ -255,23 +255,24 @@ const OgiriEvent = ({ event, creator, onJoinEvent, currentUser, thread }) => {
     return () => clearInterval(interval);
   }, [event, isEventExpired]);
 
-  // 回答を新着順にソートする関数
+  // 回答を日付の降順（新しい順）でソート
   const sortAnswersByDate = (answers) => {
     return [...answers].sort((a, b) => {
       const dateA =
         a.createdAt instanceof Date ? a.createdAt : a.createdAt.toDate();
       const dateB =
         b.createdAt instanceof Date ? b.createdAt : b.createdAt.toDate();
-      return dateB - dateA; // 降順（新着順）
+      return dateB - dateA; // 降順（新しい順）
     });
   };
 
   // 重複を防ぎつつ回答を更新する関数
   const updateLiveAnswers = (newAnswer) => {
     setLiveAnswers((prev) => {
-      // 既存の回答から重複を除外し、新しい回答を追加して新着順にソート
+      // 既存の回答から重複を除外
       const uniqueAnswers = prev.filter((answer) => answer.id !== newAnswer.id);
-      return sortAnswersByDate([...uniqueAnswers, newAnswer]);
+      // 新しい回答を先頭に追加（降順持）
+      return [newAnswer, ...uniqueAnswers];
     });
   };
 
@@ -407,7 +408,6 @@ const OgiriEvent = ({ event, creator, onJoinEvent, currentUser, thread }) => {
     const validAnswers = liveAnswers
       .filter((answer) => answer && answer.id)
       .filter((answer) => {
-        // 最多投票回答を除外
         if (isTimeExpired && mostVotedAnswer) {
           return answer.id !== mostVotedAnswer.id;
         }
@@ -465,8 +465,7 @@ const OgiriEvent = ({ event, creator, onJoinEvent, currentUser, thread }) => {
                   </Text>
 
                   <Flex justify="space-between" align="center">
-                    {/* 左側：ユーザー情報 */}
-                    <HStack spacing={3}>
+                    <HStack spacing={2}>
                       {isTimeExpired ? (
                         <>
                           <Avatar
@@ -502,13 +501,12 @@ const OgiriEvent = ({ event, creator, onJoinEvent, currentUser, thread }) => {
                             bgClip="text"
                             fontWeight="bold"
                           >
-                            回答者 #{index + 1}
+                            回答者 #{validAnswers.length - (startIndex + index)}
                           </Text>
                         </HStack>
                       )}
                     </HStack>
 
-                    {/* 右側：投票ボタンとカウント */}
                     <HStack spacing={2}>
                       <IconButton
                         icon={
