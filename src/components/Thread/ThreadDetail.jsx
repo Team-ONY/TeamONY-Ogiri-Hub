@@ -248,33 +248,48 @@ function ThreadDetail() {
             const eventData = docSnapshot.data();
             let creator = null;
 
-            if (eventData.createdBy) {
-              const userRef = doc(db, 'users', eventData.createdBy);
-              const userSnap = await getDoc(userRef);
-              if (userSnap.exists()) {
-                creator = {
-                  uid: eventData.createdBy,
-                  ...userSnap.data(),
-                };
+            try {
+              if (eventData.createdBy) {
+                const userRef = doc(db, 'users', eventData.createdBy);
+                const userSnap = await getDoc(userRef);
+                if (userSnap.exists()) {
+                  creator = {
+                    uid: eventData.createdBy,
+                    ...userSnap.data(),
+                  };
+                }
               }
-            }
 
-            return {
-              id: docSnapshot.id,
-              ...eventData,
-              createdAt:
-                eventData.createdAt?.toDate?.() ||
-                new Date(eventData.createdAt),
-              creator: creator || {
-                uid: eventData.createdBy,
-                username: '不明なユーザー',
-                photoURL: null,
-              },
-            };
+              return {
+                id: docSnapshot.id,
+                ...eventData,
+                createdAt:
+                  eventData.createdAt?.toDate?.() ||
+                  new Date(eventData.createdAt),
+                creator: creator || {
+                  uid: eventData.createdBy,
+                  username: '不明なユーザー',
+                  photoURL: null,
+                },
+              };
+            } catch (error) {
+              console.error('Error processing event:', error);
+              return null;
+            }
           })
         );
 
-        setOgiriEvents(eventsData);
+        // nullの要素を除外し、重複を防ぐ
+        const validEvents = eventsData
+          .filter((event) => event !== null)
+          .reduce((acc, event) => {
+            if (!acc.some((e) => e.id === event.id)) {
+              acc.push(event);
+            }
+            return acc;
+          }, []);
+
+        setOgiriEvents(validEvents);
         setLoadingEvents(false);
       } catch (error) {
         console.error('Error processing events:', error);
@@ -333,16 +348,18 @@ function ThreadDetail() {
               <Spinner size="xl" color="pink.400" />
             </Center>
           ) : (
-            ogiriEvents.map((event) => (
-              <OgiriEvent
-                key={event.id}
-                event={{ ...event, threadId: id }}
-                creator={event.creator}
-                onJoinEvent={() => handleJoinEvent(event.id)}
-                currentUser={currentUser}
-                thread={thread}
-              />
-            ))
+            ogiriEvents.map((event) =>
+              event && event.creator ? (
+                <OgiriEvent
+                  key={`${event.id}-${event.createdAt.getTime()}`}
+                  event={{ ...event, threadId: id }}
+                  creator={event.creator}
+                  onJoinEvent={() => handleJoinEvent(event.id)}
+                  currentUser={currentUser}
+                  thread={thread}
+                />
+              ) : null
+            )
           )}
           <CommentSection
             comments={displayedComments}
