@@ -12,7 +12,7 @@ import {
 import { motion } from 'framer-motion';
 import { AdminButton } from './AdminButton';
 import PropTypes from 'prop-types';
-import { CommentInput } from '../CommentSection/CommentInput';
+import { CommentInput } from '../Comments/CommentInput';
 import { FiClock, FiMessageCircle, FiUser, FiFlag } from 'react-icons/fi';
 import { RiVipCrownFill } from 'react-icons/ri';
 import { BiSolidLike } from 'react-icons/bi';
