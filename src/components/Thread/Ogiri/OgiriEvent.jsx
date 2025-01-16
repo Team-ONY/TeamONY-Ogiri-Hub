@@ -773,6 +773,9 @@ const OgiriEvent = ({ event, creator, onJoinEvent, currentUser, thread }) => {
     }
   };
 
+  // 最多投票回答のアニメーションコンポーネントを追加
+  const BestAnswerAnimation = motion(Box);
+
   return (
     <>
       <Box
@@ -1115,11 +1118,26 @@ const OgiriEvent = ({ event, creator, onJoinEvent, currentUser, thread }) => {
                     {isEventExpired &&
                       mostVotedAnswer &&
                       mostVotedAnswer.id === bestAnswerId && (
-                        <motion.div
-                          initial={{ opacity: 0, y: 20 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ duration: 0.4 }}
-                          style={{ width: '100%' }}
+                        <BestAnswerAnimation
+                          initial={{
+                            opacity: 0,
+                            scale: 0.8,
+                            y: 50,
+                          }}
+                          animate={{
+                            opacity: 1,
+                            scale: 1,
+                            y: 0,
+                          }}
+                          transition={{
+                            duration: 0.8,
+                            ease: [0.4, 0, 0.2, 1],
+                            scale: {
+                              type: 'spring',
+                              damping: 8,
+                              stiffness: 100,
+                            },
+                          }}
                         >
                           <Box
                             bg="rgba(0, 0, 0, 0.3)"
@@ -1131,87 +1149,151 @@ const OgiriEvent = ({ event, creator, onJoinEvent, currentUser, thread }) => {
                             borderColor="pink.500"
                             boxShadow="0 4px 30px rgba(236, 72, 153, 0.1)"
                             mb={6}
+                            _before={{
+                              content: '""',
+                              position: 'absolute',
+                              top: 0,
+                              left: 0,
+                              right: 0,
+                              bottom: 0,
+                              background:
+                                'radial-gradient(circle at top right, rgba(236, 72, 153, 0.1), transparent 70%)',
+                              pointerEvents: 'none',
+                            }}
                           >
-                            <Box
-                              position="absolute"
-                              top={0}
-                              left={0}
-                              right={0}
-                              height="3px"
-                              bgGradient={gradient}
-                            />
+                            <motion.div
+                              initial={{ width: '0%' }}
+                              animate={{ width: '100%' }}
+                              transition={{
+                                delay: 0.5,
+                                duration: 1,
+                                ease: 'easeOut',
+                              }}
+                            >
+                              <Box
+                                position="absolute"
+                                top={0}
+                                left={0}
+                                right={0}
+                                height="3px"
+                                bgGradient={gradient}
+                              />
+                            </motion.div>
+
                             <Box p={6}>
                               <VStack spacing={4} align="stretch">
-                                <HStack spacing={3} justify="space-between">
-                                  <HStack>
-                                    <Icon
-                                      as={FiAward}
-                                      color="pink.300"
-                                      w={5}
-                                      h={5}
-                                    />
-                                    <Text
-                                      bgGradient={gradient}
-                                      bgClip="text"
-                                      fontSize="lg"
-                                      fontWeight="bold"
-                                    >
-                                      最多投票回答 🏆
-                                    </Text>
-                                  </HStack>
-                                  <Badge
-                                    colorScheme="pink"
-                                    variant="solid"
-                                    px={3}
-                                    py={1}
-                                    borderRadius="full"
-                                  >
-                                    {mostVotedAnswer.voteCount || 0} 票
-                                  </Badge>
-                                </HStack>
-
-                                <Box
-                                  bg="whiteAlpha.100"
-                                  p={4}
-                                  borderRadius="xl"
-                                  border="1px solid"
-                                  borderColor="whiteAlpha.200"
+                                <motion.div
+                                  initial={{ x: -20, opacity: 0 }}
+                                  animate={{ x: 0, opacity: 1 }}
+                                  transition={{ delay: 0.3, duration: 0.5 }}
                                 >
-                                  <Text
-                                    color="white"
-                                    fontSize="xl"
-                                    fontWeight="medium"
-                                    lineHeight="tall"
-                                  >
-                                    {mostVotedAnswer.content}
-                                  </Text>
-                                </Box>
-
-                                <HStack spacing={3}>
-                                  <Avatar
-                                    size="md"
-                                    src={mostVotedAnswer.photoURL}
-                                    name={mostVotedAnswer.username}
-                                    border="2px solid"
-                                    borderColor="pink.400"
-                                  />
-                                  <VStack align="start" spacing={0}>
-                                    <Text
-                                      bgGradient={gradient}
-                                      bgClip="text"
-                                      fontWeight="bold"
+                                  <HStack spacing={3} justify="space-between">
+                                    <HStack>
+                                      <motion.div
+                                        animate={{
+                                          rotate: [0, -10, 10, -10, 0],
+                                          scale: [1, 1.2, 1],
+                                        }}
+                                        transition={{
+                                          duration: 1,
+                                          delay: 1,
+                                          ease: 'easeInOut',
+                                        }}
+                                      >
+                                        <Icon
+                                          as={FiAward}
+                                          color="pink.300"
+                                          w={5}
+                                          h={5}
+                                        />
+                                      </motion.div>
+                                      <Text
+                                        bgGradient={gradient}
+                                        bgClip="text"
+                                        fontSize="lg"
+                                        fontWeight="bold"
+                                      >
+                                        最多投票回答 🏆
+                                      </Text>
+                                    </HStack>
+                                    <motion.div
+                                      initial={{ scale: 0 }}
+                                      animate={{ scale: 1 }}
+                                      transition={{
+                                        delay: 0.8,
+                                        type: 'spring',
+                                      }}
                                     >
-                                      {mostVotedAnswer.username}
+                                      <Badge
+                                        colorScheme="pink"
+                                        variant="solid"
+                                        px={3}
+                                        py={1}
+                                        borderRadius="full"
+                                      >
+                                        {mostVotedAnswer.voteCount || 0} 票
+                                      </Badge>
+                                    </motion.div>
+                                  </HStack>
+                                </motion.div>
+
+                                <motion.div
+                                  initial={{ y: 20, opacity: 0 }}
+                                  animate={{ y: 0, opacity: 1 }}
+                                  transition={{ delay: 0.6, duration: 0.5 }}
+                                >
+                                  <Box
+                                    bg="whiteAlpha.100"
+                                    p={4}
+                                    borderRadius="xl"
+                                    border="1px solid"
+                                    borderColor="whiteAlpha.200"
+                                  >
+                                    <Text
+                                      color="white"
+                                      fontSize="xl"
+                                      fontWeight="medium"
+                                      lineHeight="tall"
+                                    >
+                                      {mostVotedAnswer.content}
                                     </Text>
-                                    <Text color="whiteAlpha.600" fontSize="sm">
-                                      @{getUserId(mostVotedAnswer.userId)}
-                                    </Text>
-                                  </VStack>
-                                </HStack>
+                                  </Box>
+                                </motion.div>
+
+                                <motion.div
+                                  initial={{ y: 20, opacity: 0 }}
+                                  animate={{ y: 0, opacity: 1 }}
+                                  transition={{ delay: 0.9, duration: 0.5 }}
+                                >
+                                  <HStack spacing={3}>
+                                    <Avatar
+                                      size="md"
+                                      src={mostVotedAnswer.photoURL}
+                                      name={mostVotedAnswer.username}
+                                      border="2px solid"
+                                      borderColor="pink.400"
+                                    />
+                                    <VStack align="start" spacing={0}>
+                                      <Text
+                                        bgGradient={gradient}
+                                        bgClip="text"
+                                        fontWeight="bold"
+                                      >
+                                        {mostVotedAnswer.username}
+                                      </Text>
+                                      <Text
+                                        color="whiteAlpha.600"
+                                        fontSize="sm"
+                                      >
+                                        @{getUserId(mostVotedAnswer.userId)}
+                                      </Text>
+                                    </VStack>
+                                  </HStack>
+                                </motion.div>
                               </VStack>
                             </Box>
                           </Box>
-                        </motion.div>
+                        </BestAnswerAnimation>
                       )}
                     {renderLiveAnswers()}
                   </>
