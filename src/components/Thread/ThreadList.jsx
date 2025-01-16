@@ -9,13 +9,6 @@ import {
   Tag,
   Icon,
   Button,
-  Modal,
-  ModalOverlay,
-  ModalContent,
-  ModalHeader,
-  ModalFooter,
-  ModalBody,
-  ModalCloseButton,
   useDisclosure,
   Flex,
 } from '@chakra-ui/react';
@@ -26,11 +19,10 @@ import {
   FiMessageCircle,
   FiUser,
   FiUserPlus,
-  FiCheckCircle,
-  FiAlertCircle,
 } from 'react-icons/fi';
 import { auth } from '../../config/firebase';
 import PropTypes from 'prop-types';
+import JoinThreadModal from './JoinThreadModal';
 
 const MotionBox = motion(Box);
 const MotionTag = motion(Tag);
@@ -264,75 +256,12 @@ function ThreadList({
         ))}
       </VStack>
 
-      {/* モーダル部分は以前と同じ */}
-      <Modal
+      <JoinThreadModal
         isOpen={isOpen}
         onClose={onClose}
-        isCentered
-        motionPreset="slideInBottom"
-      >
-        {/* モーダルの内容は変更なし */}
-        <ModalOverlay backdropFilter="blur(10px)" />
-        <ModalContent
-          bg="linear-gradient(170deg, rgba(18, 18, 18, 0.95) 0%, rgba(30, 30, 30, 0.95) 100%)"
-          border="1px solid"
-          borderColor="whiteAlpha.200"
-          borderRadius="2xl"
-          p={4}
-        >
-          {/* モーダルヘッダー、ボディ、フッターは以前と同じ */}
-          <ModalHeader
-            bgGradient="linear(to-r, pink.400, purple.400)"
-            bgClip="text"
-            display="flex"
-            alignItems="center"
-            gap={2}
-          >
-            <Icon as={FiAlertCircle} />
-            スレッド参加の確認
-          </ModalHeader>
-          <ModalCloseButton color="whiteAlpha.600" />
-          <ModalBody color="whiteAlpha.900">
-            <VStack align="stretch" spacing={4}>
-              <Text fontWeight="bold">
-                「{selectedThread?.title}」に参加しますか？
-              </Text>
-              <Box
-                bg="whiteAlpha.100"
-                p={4}
-                borderRadius="xl"
-                fontSize="sm"
-                color="whiteAlpha.800"
-              >
-                <Text fontWeight="bold" mb={2}>
-                  スレッドのルール
-                </Text>
-                <VStack align="start" spacing={2}>
-                  <Text>• 参加者への敬意を持った発言を心がけてください</Text>
-                  <Text>• 不適切な発言や画像の投稿は禁止です</Text>
-                  <Text>• 話題に関係のない投稿は控えめにお願いします</Text>
-                </VStack>
-              </Box>
-            </VStack>
-          </ModalBody>
-          <ModalFooter gap={3}>
-            <Button variant="ghost" onClick={onClose} color="whiteAlpha.600">
-              キャンセル
-            </Button>
-            <Button
-              onClick={handleJoinConfirm}
-              bgGradient="linear(to-r, pink.400, purple.400)"
-              color="white"
-              leftIcon={<Icon as={FiCheckCircle} />}
-              _hover={{
-                bgGradient: 'linear(to-r, pink.500, purple.500)',
-              }}
-            >
-              参加する
-            </Button>
-          </ModalFooter>
-        </ModalContent>
-      </Modal>
+        thread={selectedThread}
+        onJoin={handleJoinConfirm}
+      />
     </>
   );
 }
