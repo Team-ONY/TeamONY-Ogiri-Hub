@@ -17,6 +17,8 @@ import {
   useToast,
   FormLabel,
   Icon,
+  IconButton,
+  Flex,
 } from '@chakra-ui/react';
 import { motion } from 'framer-motion';
 import {
@@ -25,6 +27,9 @@ import {
   FiPaperclip,
   FiMessageSquare,
   FiUpload,
+  FiShield,
+  FiPlus,
+  FiX,
 } from 'react-icons/fi';
 import PropTypes from 'prop-types';
 
@@ -310,41 +315,37 @@ const CreateThreadModal = ({ isOpen, onClose, onThreadCreated }) => {
               />
             </FormSection>
 
-            <FormSection icon={FiHash} label="Rules">
-              {rules.map((rule, index) => (
-                <Box key={index} marginBottom={4}>
-                  <Input
-                    placeholder="ルールを入力してください"
-                    value={rule}
-                    onChange={(e) => handleRuleChange(index, e.target.value)}
-                    {...inputStyles}
-                  />
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleRemoveRule(index)}
-                    color="whiteAlpha.700"
-                    _hover={{
-                      bg: 'whiteAlpha.100',
-                      color: 'white',
-                    }}
-                  >
-                    削除
-                  </Button>
-                </Box>
-              ))}
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleAddRule}
-                color="whiteAlpha.700"
-                _hover={{
-                  bg: 'whiteAlpha.100',
-                  color: 'white',
-                }}
-              >
-                ルールを追加
-              </Button>
+            <FormSection icon={FiShield} label="スレッドルール">
+              <VStack spacing={3} align="stretch">
+                {rules.map((rule, index) => (
+                  <Flex key={index} gap={2}>
+                    <Input
+                      placeholder={`ルール ${index + 1}`}
+                      value={rule}
+                      onChange={(e) => handleRuleChange(index, e.target.value)}
+                      bg="blackAlpha.400"
+                      color="white"
+                      borderRadius="xl"
+                    />
+                    <IconButton
+                      icon={<FiX />}
+                      onClick={() => handleRemoveRule(index)}
+                      variant="ghost"
+                      colorScheme="red"
+                      isDisabled={rules.length === 1}
+                    />
+                  </Flex>
+                ))}
+                <Button
+                  leftIcon={<FiPlus />}
+                  onClick={handleAddRule}
+                  variant="ghost"
+                  size="sm"
+                  w="fit-content"
+                >
+                  ルールを追加
+                </Button>
+              </VStack>
             </FormSection>
           </VStack>
         </ModalBody>
