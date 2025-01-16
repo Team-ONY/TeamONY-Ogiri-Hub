@@ -24,6 +24,7 @@ function App() {
         {!hideHeaderRoutes.includes(location.pathname) ? (
           <Layout>
             <Routes>
+              <Route path="/" element={<Navigate to="/home" />} />
               <Route
                 path="/home"
                 element={
@@ -76,7 +77,6 @@ function App() {
           </Layout>
         ) : (
           <Routes>
-            <Route path="/" element={<Navigate to="/home" />} />
             <Route path="/signin" element={<SignIn />} />
             <Route path="/signup" element={<SignUp />} />
           </Routes>
