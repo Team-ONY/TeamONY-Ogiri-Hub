@@ -29,6 +29,17 @@ function Sidebar({ isOpen, toggleSidebar }) {
   const { logout } = useAuth();
   const { isOpen: isCreateThreadModalOpen, onOpen, onClose } = useDisclosure();
 
+  const handleThreadCreated = async (threadId) => {
+    try {
+      // 少し遅延を入れてからナビゲーションを実行
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      onClose();
+      navigate(`/thread/${threadId}`);
+    } catch (error) {
+      console.error('Navigation error:', error);
+    }
+  };
+
   const handleNavigation = (path) => {
     if (path === '/logout') {
       logout();
@@ -214,7 +225,11 @@ function Sidebar({ isOpen, toggleSidebar }) {
         </Box>
       </MotionBox>
 
-      <CreateThreadModal isOpen={isCreateThreadModalOpen} onClose={onClose} />
+      <CreateThreadModal
+        isOpen={isCreateThreadModalOpen}
+        onClose={onClose}
+        onThreadCreated={handleThreadCreated}
+      />
     </>
   );
 }
