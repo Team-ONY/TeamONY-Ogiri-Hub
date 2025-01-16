@@ -18,7 +18,7 @@ import {
   FormLabel,
   Icon,
   IconButton,
-  Flex,
+  HStack,
 } from '@chakra-ui/react';
 import { motion } from 'framer-motion';
 import {
@@ -29,9 +29,11 @@ import {
   FiUpload,
   FiShield,
   FiPlus,
+  FiTrash2,
   FiX,
 } from 'react-icons/fi';
 import PropTypes from 'prop-types';
+import { createThread } from '../../services/threadService';
 
 // Motion components
 const MotionInput = motion(Input);
@@ -84,6 +86,45 @@ const FormSection = ({ icon, label, children }) => (
   </Box>
 );
 
+// ルール入力フィールドのコンポーネント
+const RuleInput = ({ value, onChange, onRemove, isRemovable }) => (
+  <HStack width="100%" spacing={2}>
+    <Textarea
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      placeholder="スレッドのルールを入力..."
+      size="sm"
+      resize="vertical"
+      bg="rgba(255, 255, 255, 0.06)"
+      border="1px solid"
+      borderColor="whiteAlpha.200"
+      _hover={{ borderColor: 'whiteAlpha.300' }}
+      _focus={{
+        borderColor: 'pink.400',
+        boxShadow: '0 0 0 1px var(--chakra-colors-pink-400)',
+      }}
+    />
+    {isRemovable && (
+      <IconButton
+        icon={<FiTrash2 />}
+        onClick={onRemove}
+        variant="ghost"
+        colorScheme="red"
+        size="sm"
+        _hover={{ bg: 'rgba(255, 0, 0, 0.1)' }}
+      />
+    )}
+  </HStack>
+);
+
+// PropTypesの定義
+RuleInput.propTypes = {
+  value: PropTypes.string.isRequired,
+  onChange: PropTypes.func.isRequired,
+  onRemove: PropTypes.func.isRequired,
+  isRemovable: PropTypes.bool.isRequired,
+};
+
 const CreateThreadModal = ({ isOpen, onClose, onThreadCreated }) => {
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
@@ -96,16 +137,6 @@ const CreateThreadModal = ({ isOpen, onClose, onThreadCreated }) => {
   const MAX_TITLE_LENGTH = 30;
   const MAX_TAG_LENGTH = 30;
   const MAX_TAGS_COUNT = 5;
-
-  const handleAddRule = () => {
-    setRules([...rules, '']);
-  };
-
-  const handleRuleChange = (index, value) => {
-    const newRules = [...rules];
-    newRules[index] = value;
-    setRules(newRules);
-  };
 
   const handleRemoveRule = (index) => {
     setRules(rules.filter((_, i) => i !== index));
@@ -165,17 +196,16 @@ const CreateThreadModal = ({ isOpen, onClose, onThreadCreated }) => {
     const validRules = rules.filter((rule) => rule.trim() !== '');
 
     try {
-      const threadData = {
+      // スレッド作成
+      const threadId = await createThread(
         title,
         content,
         tags,
         attachments,
-        rules: validRules,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
+        validRules
+      );
 
-      await onThreadCreated(threadData);
+      // 成功トースト表示
       toast({
         title: '作成完了',
         description: 'スレッドが作成されました。',
@@ -183,21 +213,137 @@ const CreateThreadModal = ({ isOpen, onClose, onThreadCreated }) => {
         duration: 3000,
         isClosable: true,
       });
+
+      // フォームをリセット
       setTitle('');
       setContent('');
       setTags([]);
       setAttachments([]);
       setRules(['']);
+
+      // モーダルを閉じる
       onClose();
-    } catch (err) {
+
+      // コールバックを実行
+      if (onThreadCreated) {
+        onThreadCreated(threadId);
+      }
+    } catch (error) {
+      console.error('Error creating thread:', error);
       toast({
         title: 'エラー',
-        description: `スレッドの作成に失敗しました: ${err}`,
+        description: 'スレッドの作成に失敗しました。',
         status: 'error',
         duration: 3000,
         isClosable: true,
       });
     }
+  };
+
+  // モーダルのフォーム部分に追加するルールセクション
+  const RulesSection = () => {
+    const [inputRule, setInputRule] = useState('');
+
+    const handleAddRule = () => {
+      if (!inputRule.trim()) {
+        toast({
+          title: 'エラー',
+          description: 'ルールを入力してください',
+          status: 'error',
+          duration: 2000,
+          isClosable: true,
+        });
+        return;
+      }
+      setRules([...rules, inputRule.trim()]);
+      setInputRule('');
+    };
+
+    const handleKeyPress = (e) => {
+      // WindowsのCtrl+Enter、MacのCmd+Enterでの登録
+      if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+        e.preventDefault();
+        handleAddRule();
+      }
+    };
+
+    return (
+      <VStack spacing={4} align="stretch">
+        {/* ルール入力フォーム */}
+        <Box position="relative">
+          <HStack spacing={2}>
+            <Input
+              value={inputRule}
+              onChange={(e) => setInputRule(e.target.value)}
+              onKeyDown={handleKeyPress}
+              placeholder="新しいルールを入力 (Ctrl/Cmd + Enter)"
+              {...inputStyles}
+              height="45px"
+              pr="4.5rem"
+            />
+            <IconButton
+              icon={<FiPlus />}
+              onClick={handleAddRule}
+              variant="solid"
+              colorScheme="pink"
+              size="md"
+              isDisabled={!inputRule.trim()}
+              _hover={{ transform: 'scale(1.05)' }}
+              aria-label="ルールを追加"
+            />
+          </HStack>
+        </Box>
+
+        {/* 登録済みルールリスト */}
+        {rules.length > 0 && (
+          <Box
+            bg="whiteAlpha.50"
+            borderRadius="xl"
+            p={4}
+            borderWidth="1px"
+            borderColor="whiteAlpha.200"
+          >
+            <VStack spacing={3} align="stretch">
+              {rules.map((rule, index) => (
+                <HStack
+                  key={index}
+                  spacing={3}
+                  p={3}
+                  bg="blackAlpha.300"
+                  borderRadius="lg"
+                  borderWidth="1px"
+                  borderColor="whiteAlpha.100"
+                  _hover={{
+                    borderColor: 'pink.400',
+                    bg: 'blackAlpha.400',
+                  }}
+                  transition="all 0.2s"
+                >
+                  <Icon as={FiShield} color="pink.400" boxSize={4} />
+                  <Text flex="1" color="white" fontSize="md">
+                    {rule}
+                  </Text>
+                  <IconButton
+                    icon={<FiX />}
+                    onClick={() => handleRemoveRule(index)}
+                    variant="ghost"
+                    colorScheme="red"
+                    size="sm"
+                    _hover={{ bg: 'rgba(255, 0, 0, 0.1)' }}
+                    aria-label="ルールを削除"
+                  />
+                </HStack>
+              ))}
+            </VStack>
+          </Box>
+        )}
+
+        {/* ヘルプテキスト */}
+        <Text fontSize="xs" color="whiteAlpha.600" textAlign="right">
+          Ctrl/Cmd + Enter または追加ボタンでルールを登録
+        </Text>
+      </VStack>
+    );
   };
 
   return (
@@ -315,37 +461,8 @@ const CreateThreadModal = ({ isOpen, onClose, onThreadCreated }) => {
               />
             </FormSection>
 
-            <FormSection icon={FiShield} label="スレッドルール">
-              <VStack spacing={3} align="stretch">
-                {rules.map((rule, index) => (
-                  <Flex key={index} gap={2}>
-                    <Input
-                      placeholder={`ルール ${index + 1}`}
-                      value={rule}
-                      onChange={(e) => handleRuleChange(index, e.target.value)}
-                      bg="blackAlpha.400"
-                      color="white"
-                      borderRadius="xl"
-                    />
-                    <IconButton
-                      icon={<FiX />}
-                      onClick={() => handleRemoveRule(index)}
-                      variant="ghost"
-                      colorScheme="red"
-                      isDisabled={rules.length === 1}
-                    />
-                  </Flex>
-                ))}
-                <Button
-                  leftIcon={<FiPlus />}
-                  onClick={handleAddRule}
-                  variant="ghost"
-                  size="sm"
-                  w="fit-content"
-                >
-                  ルールを追加
-                </Button>
-              </VStack>
+            <FormSection icon={FiShield} label="スレッドのルール">
+              <RulesSection />
             </FormSection>
           </VStack>
         </ModalBody>
