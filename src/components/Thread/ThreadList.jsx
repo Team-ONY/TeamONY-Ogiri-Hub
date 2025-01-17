@@ -151,10 +151,10 @@ function ThreadList({
                         {thread.createdBy === currentUser?.uid && (
                           <Icon
                             as={FaCrown}
-                            color="yellow.400"
+                            color="pink.400"
                             boxSize={5}
                             ml={2}
-                            filter="drop-shadow(0 0 2px rgba(255, 215, 0, 0.5))"
+                            filter="drop-shadow(0 0 8px rgba(255, 25, 136, 0.3))"
                           />
                         )}
                       </Text>
