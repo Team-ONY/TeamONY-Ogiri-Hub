@@ -1,3 +1,5 @@
+ThreadList.jsxの変更点
+
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getThreads, joinThread } from '../../services/threadService';
@@ -23,6 +25,7 @@ import {
 import { auth } from '../../config/firebase';
 import PropTypes from 'prop-types';
 import JoinThreadModal from './JoinThreadModal';
+import { FaCrown } from 'react-icons/fa';
 
 const MotionBox = motion(Box);
 const MotionTag = motion(Tag);
@@ -134,17 +137,28 @@ function ThreadList({
                 {/* コンテンツ上部 */}
                 <VStack align="stretch" spacing={4} flex="1">
                   <VStack align="start" spacing={2}>
-                    <Text
-                      fontSize={{ base: 'xl', md: '3xl' }}
-                      fontWeight="bold"
-                      bgGradient="linear(to-r, pink.400, purple.400)"
-                      bgClip="text"
-                      letterSpacing="tight"
-                      textShadow="0 0 20px rgba(236, 72, 153, 0.3)"
-                      noOfLines={2}
-                    >
-                      {thread.title}
-                    </Text>
+                    <Flex align="center" width="100%">
+                      <Text
+                        fontSize={{ base: 'xl', md: '3xl' }}
+                        fontWeight="bold"
+                        bgGradient="linear(to-r, pink.400, purple.400)"
+                        bgClip="text"
+                        letterSpacing="tight"
+                        textShadow="0 0 20px rgba(236, 72, 153, 0.3)"
+                        noOfLines={2}
+                      >
+                        {thread.title}
+                        {thread.createdBy === currentUser?.uid && (
+                          <Icon
+                            as={FaCrown}
+                            color="yellow.400"
+                            boxSize={5}
+                            ml={2}
+                            filter="drop-shadow(0 0 2px rgba(255, 215, 0, 0.5))"
+                          />
+                        )}
+                      </Text>
+                    </Flex>
                     <Text
                       fontSize={{ base: 'md', md: 'lg' }}
                       color="gray.300"
