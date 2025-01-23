@@ -40,7 +40,7 @@ git clone https://github.com/Team-ONY/TeamONY-Ogiri-Hub.git
 2. 依存関係のインストール:
 
 ```bash
-cd ogiri-hub
+cd TeamONY-Ogiri-Hub
 npm install
 ```
 
